@@ -18,7 +18,6 @@ struct SignalPt {
 template <typename Real = double, typename Clock = chrono::steady_clock>
 struct PIDState {
   chrono::time_point<Clock> time;
-  Real setPt;
   Real errSum;
   Real error;
   Real ctrlVal;
@@ -26,17 +25,15 @@ struct PIDState {
 
 template <typename Real = double, typename Clock = chrono::steady_clock>
 auto pid_algebra(Real kp, Real ki, Real kd) {
-  return [kp, ki, kd](PIDState<Real, Clock> s, SignalPt<Real, Clock> input)
-    -> PIDState<Real, Clock> {
-    const auto delta = s.time - input.time;
-    const auto err = s.setPt - input.value;
-    const auto errSum =
-        s.errSum
-        + (err * chrono::duration_cast<chrono::seconds>(delta).count());
-    const auto dErr =
-        (err - s.error) / chrono::duration_cast<chrono::seconds>(delta).count();
-    const auto ctrlVal = kp * err + ki * errSum + kd * dErr;
+  return [kp, ki, kd](PIDState<Real, Clock> prev,
+                      SignalPt<Real, Clock> errSigl) -> PIDState<Real, Clock> {
+    const auto deltaT =
+        chrono::duration_cast<chrono::seconds>(errSigl.time - prev.time)
+            .count();
+    const auto errSum = prev.errSum + (errSigl.value * deltaT);
+    const auto dErr = (errSigl.value - prev.error) / deltaT;
+    const auto ctrlVal = kp * errSigl.value + ki * errSum + kd * dErr;
 
-    return {input.time, s.setPt, errSum, err, ctrlVal};
+    return {errSigl.time, errSum, errSigl.value, ctrlVal};
   };
 }

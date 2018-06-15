@@ -2,12 +2,11 @@
 #include <iostream>
 #include "../lib/pid.hpp"
 
-using Real_t           = double;
+using Real_t = double;
 using RealSignalVector = std::vector<SignalPt<Real_t>>;
-using CtrlState        = PIDState<Real_t>;
+using CtrlState = PIDState<Real_t>;
 
-const auto now    = chrono::steady_clock::now();
-const auto oneSec = 1s;
+const auto now = chrono::steady_clock::now();
 
 template <typename T, typename A, typename F>
 auto get_each(std::vector<T, A> v, F accessor) {
@@ -21,7 +20,7 @@ auto get_each(std::vector<T, A> v, F accessor) {
   return result;
 }
 
-constexpr auto list_fold =
+constexpr auto scanl =
     [](const auto f, const auto x0,
        const RealSignalVector &data) -> std::vector<CtrlState> {
   auto accumulator = x0;
@@ -32,58 +31,54 @@ constexpr auto list_fold =
     accumulator = f(accumulator, datum);
     xs.push_back(accumulator);
   };
+
   return xs;
 };
 
 TEST_CASE(
-    "A proportional ctrler with kp = 1, given a constant signal with value 1 "
-    "and a setpoint of 1 should produce a constant control signal of value 0, "
+    "A proportional ctrler with kp = 1, given a constant error signal with "
+    "value 0 should produce a constant control signal of value 0 and "
     "accumulate no error. It also shouldn't report error or change its "
     "setpoint.") {
-  const auto foldable_p00 = pid_algebra<double>(1.f, 0.f, 0.f);
+  const auto foldable_p00 = pid_algebra<double>(1., 0., 0.);
 
-  RealSignalVector ones{{now + 1s, 1}, {now + 2s, 1}, {now + 3s, 1}};
+  RealSignalVector ones{{now + 1s, 0}, {now + 2s, 0}, {now + 3s, 0}};
 
-  CtrlState init{now, 1.f, 0.f, 0.f, 0.f};
+  CtrlState init{now, 0., 0., 0.};
 
-  auto result = list_fold(foldable_p00, init, ones);
+  auto result = scanl(foldable_p00, init, ones);
 
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
-          == std::vector<double>{0.f, 0.f, 0.f});
+          == std::vector<double>{0., 0., 0.});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.error; })
-          == std::vector<double>{0.f, 0.f, 0.f});
+          == std::vector<double>{0., 0., 0.});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.errSum; })
-          == std::vector<double>{0.f, 0.f, 0.f});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.setPt; })
-          == std::vector<double>{1.f, 1.f, 1.f});
+          == std::vector<double>{0., 0., 0.});
 }
 
 TEST_CASE(
-    "An integral controller with ki = 1, given a constant signal of value 1 "
-    "and a setpoint of zero should accumulate error with a proportionally "
-    "growing ctrlVal.") {
-  const auto foldable_0i0 = pid_algebra<double>(0.f, 1.f, 0.f);
+    "An integral controller with ki = 1, given a constant error signal of "
+    "value 1, should accumulate error with a proportionally growing ctrlVal.") {
+  const auto foldable_0i0 = pid_algebra<double>(0., 1., 0.);
 
   RealSignalVector ones{{now + 1s, 1}, {now + 2s, 1}, {now + 3s, 1}};
 
-  CtrlState init{now, 0.f, 0.f, 0.f, 0.f};
+  CtrlState init{now, 0., 0., 0.};
 
-  auto result = list_fold(foldable_0i0, init, ones);
+  auto result = scanl(foldable_0i0, init, ones);
 
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
-          == std::vector<double>{1.f, 2.f, 3.f});
+          == std::vector<double>{1., 2., 3.});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.error; })
-          == std::vector<double>{-1.f, -1.f, -1.f});
+          == std::vector<double>{1., 1., 1.,});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.errSum; })
-          == std::vector<double>{1.f, 2.f, 3.f});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.setPt; })
-          == std::vector<double>{0.f, 0.f, 0.f});
+          == std::vector<double>{1., 2., 3.});
 }
 
 TEST_CASE(
@@ -91,23 +86,21 @@ TEST_CASE(
     "amplitude sawtooth should demonstrate the appropriate "
     "derivative/difference output. The error accumulation should also reflect "
     "the sawtooth signal.") {
-  const auto foldable_00d = pid_algebra<double>(0.f, 0.f, 1.f);
+  const auto foldable_00d = pid_algebra<double>(0., 0., 1.);
 
   RealSignalVector ones{{now + 1s, 0}, {now + 2s, 1}, {now + 3s, 0}};
 
-  CtrlState init{now, 0.f, 0.f, 0.f, 0.f};
+  CtrlState init{now, 0., 0., 0.};
 
-  auto result = list_fold(foldable_00d, init, ones);
+  auto result = scanl(foldable_00d, init, ones);
 
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
-          == std::vector<double>{0.f, 1.f, -1.f});
+          == std::vector<double>{0., 1., -1.});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.error; })
-          == std::vector<double>{0.f, -1.f, 0.f});
+          == std::vector<double>{0., 1., 0.});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.errSum; })
-          == std::vector<double>{0.f, 1.f, 1.f});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.setPt; })
-          == std::vector<double>{0.f, 0.f, 0.f});
+          == std::vector<double>{0., 1., 1.});
 }
