@@ -3,6 +3,7 @@ scrap.cpp
 
 # Vim stuff
 .undodir
+Session.vim
 
 # Cmake swawn
 CMakeCache.txt
