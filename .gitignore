@@ -1,6 +1,9 @@
 scaps.cpp
 scrap.cpp
 
+# Vim stuff
+.undodir
+
 # Cmake swawn
 CMakeCache.txt
 CMakeFiles
