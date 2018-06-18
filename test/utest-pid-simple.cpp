@@ -38,8 +38,7 @@ constexpr auto scanl =
 TEST_CASE(
     "A proportional ctrler with kp = 1, given a constant error signal with "
     "value 0 should produce a constant control signal of value 0 and "
-    "accumulate no error. It also shouldn't report error or change its "
-    "setpoint.") {
+    "accumulate no error.") {
   const auto foldable_p00 = pid_algebra<double>(1., 0., 0.);
 
   RealSignalVector ones{{now + 1s, 0}, {now + 2s, 0}, {now + 3s, 0}};
@@ -76,16 +75,15 @@ TEST_CASE(
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
           == std::vector<double>{1., 2., 3.});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.error; })
-          == std::vector<double>{1., 1., 1.,});
+          == std::vector<double>{1., 1., 1.});
   REQUIRE(get_each(result, [](const CtrlState &s) { return s.errSum; })
           == std::vector<double>{1., 2., 3.});
 }
 
 TEST_CASE(
-    "A derivative controller with kd = 1 and setpoint zero, given a unit "
-    "amplitude sawtooth should demonstrate the appropriate "
-    "derivative/difference output. The error accumulation should also reflect "
-    "the sawtooth signal.") {
+    "A derivative controller with kd = 1, given a unit amplitude sawtooth "
+    "should demonstrate the appropriate derivative/difference output. The "
+    "error accumulation should also reflect the sawtooth signal.") {
   const auto foldable_00d = pid_algebra<double>(0., 0., 1.);
 
   RealSignalVector ones{{now + 1s, 0}, {now + 2s, 1}, {now + 3s, 0}};
