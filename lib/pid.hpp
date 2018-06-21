@@ -25,8 +25,8 @@ struct PIDState {
 
 template <typename Real = double, typename Clock = chrono::steady_clock>
 auto pid_algebra(Real kp, Real ki, Real kd) {
-  return [kp, ki, kd](PIDState<Real, Clock> prev,
-                      SignalPt<Real, Clock> errSigl) -> PIDState<Real, Clock> {
+  return [kp, ki, kd](SignalPt<Real, Clock> errSigl,
+                      PIDState<Real, Clock> prev) -> PIDState<Real, Clock> {
     const auto deltaT =
         chrono::duration_cast<chrono::seconds>(errSigl.time - prev.time)
             .count();
