@@ -7,7 +7,6 @@
 
 using Real_t = double;
 
-// alg : X → U → U
 template <typename Alg, typename U>
 auto control_frp(Alg alg, const sodium::stream<U> cError, const U u0) {
   return cError.template accum<U>(u0, alg);
@@ -32,11 +31,23 @@ TEST_CASE(
 
   const auto cControl = control_frp(sum_alg, cError, e0);
 
-  cError.send({now + 1s, 1});
-  REQUIRE(cControl.sample().value == 1.);
-  REQUIRE(cControl.sample().time == now + 2s);
+  auto out = std::make_shared<std::vector<CState>>();
+  auto unlisten_cControl =
+      cControl.listen([out](auto u) { out->push_back(u); });
 
-  cError.send({now + 2s, 1});
-  REQUIRE(cControl.sample().value == 2.);
-  REQUIRE(cControl.sample().time == now + 3s);
+  cError.send({now + 1s, 1});
+  cError.send({now + 2s, 3});
+  cError.send({now + 3s, 5});
+
+  unlisten_cControl();
+
+  REQUIRE((*out)[0].value == 0.);
+  REQUIRE((*out)[0].time == now);
+  REQUIRE((*out)[1].value == 1.);
+  REQUIRE((*out)[1].time == now + 2s);
+  REQUIRE((*out)[2].value == 6.);
+  REQUIRE((*out)[2].time == now + 3s);
+  REQUIRE((*out)[2].value == 6.);
+  REQUIRE((*out)[2].time == now + 3s);
+
 }
