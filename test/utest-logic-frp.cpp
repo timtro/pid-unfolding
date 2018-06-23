@@ -6,54 +6,37 @@
 #include "Plant.hpp"
 
 using Real_t = double;
-using CState = PIDState<Real_t>;
 
-template <typename Clock = chrono::steady_clock>
-inline constexpr auto double_to_duration(double t) {
-  return chrono::duration_cast<typename Clock::duration>(
-      chrono::duration<double>(t));
+// alg : X → U → U
+template <typename Alg, typename U>
+auto control_frp(Alg alg, const sodium::stream<U> cError, const U u0) {
+  return cError.template accum<U>(u0, alg);
 }
 
-constexpr double dt = 1;  // seconds.
-constexpr auto dts = double_to_duration(dt);
+TEST_CASE(
+    "Given a stream of `SignalPt<double>` for controller state and plant "
+    "state, and an algebra which increments the time component and accumulates "
+    "the value component, the `control_frp` should return a stream that folds "
+    "the algebra over the input stream.") {
+  using CState = SignalPt<Real_t>;
+  using SState = SignalPt<Real_t>;
 
-constexpr auto add_alg = [](SignalPt<Real_t> errSigl,
-                            PIDState<Real_t> prev) -> PIDState<Real_t> {
-  const auto newTime = prev.time + (errSigl.time - prev.time);
-  return {newTime, errSigl.value + prev.errSum + 1, prev.error + 1,
-          prev.ctrlVal + 1};
-};
+  const auto now = chrono::steady_clock::now();
 
-template <typename Alg>
-struct PidFrp {
-  const Alg alg; // alg : (SignalPt<A>, PIDState<A>) → PIDState<A>, A = Real_t
-  const sodium::stream<PState> plantOutput;
-  const chrono::time_point<chrono::steady_clock> now =
-      chrono::steady_clock::now();
-  std::shared_ptr<std::vector<SignalPt<double>>> errorRecord{
-      new std::vector<SignalPt<double>>()};
-  std::shared_ptr<std::vector<CState>> ctrlScan{new std::vector<CState>()};
+  const sodium::stream_sink<SState> cError;
+  const CState e0 = {now, 0};
 
-  PidFrp(Alg alg) : alg(alg) {}
+  constexpr auto sum_alg = [](const SState& x, const CState& u) -> CState {
+    return CState{x.time + 1s, u.value + x.value};
+  };
 
-  void operator()() {
-    CState u0 = {now, 0., 0., 0.};
-    sodium::cell<double> setpoint(0.);
+  const auto cControl = control_frp(sum_alg, cError, e0);
 
-    const auto error = plantOutput.snapshot(
-        setpoint, [](const SignalPt<PState>& x, const double& setpt) {
-          return SignalPt<double>{x.time, setpt - x.value[0]};
-        });
+  cError.send({now + 1s, 1});
+  REQUIRE(cControl.sample().value == 1.);
+  REQUIRE(cControl.sample().time == now + 2s);
 
-    auto error_unlisten =
-        error.listen([errorRecord(this->errorRecord)](auto x) {
-          errorRecord->push_back(x);
-        });
-
-    const auto control = error.template accum<CState>(u0, alg);
-    auto ctrl_unlisten = control.listen(
-        [ctrlScan(this->ctrlScan)](auto x) { ctrlScan->push_back(x); });
-  }
-};
-
-TEST_CASE("") {}
+  cError.send({now + 2s, 1});
+  REQUIRE(cControl.sample().value == 2.);
+  REQUIRE(cControl.sample().time == now + 3s);
+}
