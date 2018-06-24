@@ -3,15 +3,11 @@
 #include <iostream>
 
 #include "../lib/pid.hpp"
+#include "../lib/control-frp.hpp"
 #include "Plant.hpp"
 #include "test-util.hpp"
 
 using Real_t = double;
-
-template <typename Alg, typename U>
-auto control_frp(Alg alg, const sodium::stream<U> cError, const U u0) {
-  return cError.template accum<U>(u0, alg);
-}
 
 TEST_CASE(
     "Given that plant and controller states are just timestamped doubles "
@@ -30,7 +26,7 @@ TEST_CASE(
     const sodium::stream_sink<PState> cError;
     const CState e0 = {now, 0};
 
-    const auto cControl = control_frp(sum_alg, cError, e0);
+    const auto cControl = ctrl::control_frp(sum_alg, cError, e0);
 
     auto out = std::make_shared<std::vector<CState>>();
     auto unlisten_cControl =
@@ -60,7 +56,7 @@ TEST_CASE(
 
     const sodium::stream_sink<PState> cError;
     const CState e0 = {now, 1};
-    const auto cControl = control_frp(sum_alg, cError, e0);
+    const auto cControl = ctrl::control_frp(sum_alg, cError, e0);
 
     auto out = std::make_shared<std::vector<CState>>();
     auto unlisten_cControl =
