@@ -38,14 +38,14 @@ TEST_CASE(
 
   auto result = scanl(foldable_p00, init, ones);
 
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.ctrlVal; })
           == std::vector<double>{0., 0., 0.});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.error; })
           == std::vector<double>{0., 0., 0.});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.errSum; })
           == std::vector<double>{0., 0., 0.});
 }
 
@@ -60,14 +60,14 @@ TEST_CASE(
 
   auto result = scanl(foldable_0i0, init, ones);
 
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.ctrlVal; })
           == std::vector<double>{1., 2., 3.});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.error; })
           == std::vector<double>{1., 1., 1.});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.errSum; })
           == std::vector<double>{1., 2., 3.});
 }
 
@@ -83,13 +83,13 @@ TEST_CASE(
 
   auto result = scanl(foldable_00d, init, ones);
 
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.ctrlVal; })
           == std::vector<double>{0., 1., -1.});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.error; })
           == std::vector<double>{0., 1., 0.});
-  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.errSum; })
           == std::vector<double>{0., 1., 1.});
 }
