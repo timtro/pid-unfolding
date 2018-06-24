@@ -1,24 +1,15 @@
-#include <catch/catch.hpp>
 #include <iostream>
+
+#include <catch/catch.hpp>
+
 #include "../lib/pid.hpp"
+#include "test-util.hpp"
 
 using Real_t = double;
 using RealSignalVector = std::vector<SignalPt<Real_t>>;
 using CtrlState = PIDState<Real_t>;
 
 const auto now = chrono::steady_clock::now();
-
-template <typename T, typename A, typename F>
-auto get_each(std::vector<T, A> v, F accessor) {
-  using AccessedType = std::invoke_result_t<F, decltype(v.at(0))>;
-  std::vector<AccessedType> result;
-  result.reserve(v.size());
-  for (const auto &each : v) {
-    result.push_back(accessor(each));
-    std::vector<T, A> result(v.size());
-  }
-  return result;
-}
 
 constexpr auto scanl =
     [](const auto f, const auto x0,
@@ -47,14 +38,14 @@ TEST_CASE(
 
   auto result = scanl(foldable_p00, init, ones);
 
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
           == std::vector<double>{0., 0., 0.});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.error; })
           == std::vector<double>{0., 0., 0.});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.errSum; })
           == std::vector<double>{0., 0., 0.});
 }
 
@@ -69,14 +60,14 @@ TEST_CASE(
 
   auto result = scanl(foldable_0i0, init, ones);
 
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
           == std::vector<double>{1., 2., 3.});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.error; })
           == std::vector<double>{1., 1., 1.});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.errSum; })
           == std::vector<double>{1., 2., 3.});
 }
 
@@ -92,13 +83,13 @@ TEST_CASE(
 
   auto result = scanl(foldable_00d, init, ones);
 
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.time; })
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.ctrlVal; })
           == std::vector<double>{0., 1., -1.});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.error; })
           == std::vector<double>{0., 1., 0.});
-  REQUIRE(get_each(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::get_each(result, [](const CtrlState &s) { return s.errSum; })
           == std::vector<double>{0., 1., 1.});
 }
