@@ -48,8 +48,7 @@ TEST_CASE("Study terminal velocity. Starting from rest at the origin …") {
   };
 
   SECTION(
-      "and given (Fs, η) = (4, 1), the terminal velocity should be approx. "
-      "2.") {
+      "and given (Fs, η) = (4, 1), the terminal velocity should be ≈ 2.") {
     const auto plant = Plant(4., 1.);
     odeint::runge_kutta4<PState> stepper;
 
@@ -59,8 +58,7 @@ TEST_CASE("Study terminal velocity. Starting from rest at the origin …") {
   }
 
   SECTION(
-      "and given (Fs, η) = (9, 1), the terminal velocity should be approx. "
-      "3.") {
+      "and given (Fs, η) = (9, 1), the terminal velocity should be ≈ 3.") {
     const auto plant = Plant(9., 1.);
     odeint::runge_kutta4<PState> stepper;
 
