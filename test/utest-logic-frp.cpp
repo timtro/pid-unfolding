@@ -2,8 +2,8 @@
 #include <catch/catch.hpp>
 #include <iostream>
 
-#include "../lib/pid.hpp"
 #include "../lib/control-frp.hpp"
+#include "../lib/pid.hpp"
 #include "Plant.hpp"
 #include "test-util.hpp"
 
@@ -18,15 +18,17 @@ TEST_CASE(
 
   const auto now = chrono::steady_clock::now();
 
-  constexpr auto sum_alg = [](const PState& x, const CState& u) -> CState {
+  constexpr auto inc_sum_alg = [](const PState& x, const CState& u) -> CState {
     return CState{x.time + 1s, u.value + x.value};
   };
 
-  SECTION("") {
+  SECTION(
+      "The sequence {(now+1s, 1), (now+2s, 3), (now+3s, 5)} pushed into the "
+      "stream should produce the expected values given the algebra.") {
     const sodium::stream_sink<PState> cError;
     const CState e0 = {now, 0};
 
-    const auto cControl = ctrl::control_frp(sum_alg, cError, e0);
+    const auto cControl = ctrl::control_frp(inc_sum_alg, cError, e0);
 
     auto out = std::make_shared<std::vector<CState>>();
     auto unlisten_cControl =
@@ -45,18 +47,17 @@ TEST_CASE(
   }
 
   SECTION(
-      "Similar to (1.) but using feedback via sodium::cell::sample(). "
-      "Because the result of the running sum in sum_alg is fed back, the "
-      "result is to double the accumulated value each time.") {
-
-  // Why the doubling?
-  //     ╭───╮  ╭───╮  ╭───╮  ╭───╮ -- feedback.
-  // {1, 1 + 1, 2 + 2, 4 + 4, 8 + 8, …}
-  //  ╰──╯ ╰────╯ ╰────╯ ╰────╯     -- accumulation
+      "Feedback via sodium::cell::sample(). Because the result of the running "
+      "sum in inc_sum_alg is fed back, the result is to double the accumulated "
+      "value each time.") {
+    // Why the doubling?
+    //     ╭───╮  ╭───╮  ╭───╮  ╭───╮ -- feedback.
+    // {1, 1 + 1, 2 + 2, 4 + 4, 8 + 8, …}
+    //  ╰──╯ ╰────╯ ╰────╯ ╰────╯     -- accumulation
 
     const sodium::stream_sink<PState> cError;
     const CState e0 = {now, 1};
-    const auto cControl = ctrl::control_frp(sum_alg, cError, e0);
+    const auto cControl = ctrl::control_frp(inc_sum_alg, cError, e0);
 
     auto out = std::make_shared<std::vector<CState>>();
     auto unlisten_cControl =
@@ -64,7 +65,7 @@ TEST_CASE(
 
     for (int k = 0; k <= 3; ++k) {
       auto ctrl = cControl.sample();
-      ctrl.time -= 1s; // Undo the increment from sum_alg. Just 'cus.
+      ctrl.time -= 1s;  // Undo the increment from inc_sum_alg. Just 'cus.
       cError.send({ctrl.time, ctrl.value});
     }
 
