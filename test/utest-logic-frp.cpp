@@ -40,9 +40,9 @@ TEST_CASE(
 
     unlisten_cControl();
 
-    REQUIRE(util::fmap(*out, [](auto x) { return x.time; })
+    REQUIRE(util::fmap([](auto x) { return x.time; }, *out)
             == std::vector{now, now + 2s, now + 3s, now + 4s});
-    REQUIRE(util::fmap(*out, [](auto x) { return x.value; })
+    REQUIRE(util::fmap([](auto x) { return x.value; }, *out)
             == std::vector{0., 1., 4., 9.});
   }
 
@@ -71,9 +71,9 @@ TEST_CASE(
 
     unlisten_cControl();
 
-    REQUIRE(util::fmap(*out, [](auto x) { return x.time; })
+    REQUIRE(util::fmap([](auto x) { return x.time; }, *out)
             == std::vector{e0.time, e0.time, e0.time, e0.time, e0.time});
-    REQUIRE(util::fmap(*out, [](auto x) { return x.value; })
+    REQUIRE(util::fmap([](auto x) { return x.value; }, *out)
             == std::vector{e0.value, 2., 4., 8., 16.});
   }
 }

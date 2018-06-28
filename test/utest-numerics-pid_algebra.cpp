@@ -38,14 +38,14 @@ TEST_CASE(
 
   auto result = scanl(foldable_p00, init, ones);
 
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.time; }, result)
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.ctrlVal; }, result)
           == std::vector<double>{0., 0., 0.});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.error; }, result)
           == std::vector<double>{0., 0., 0.});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.errSum; }, result)
           == std::vector<double>{0., 0., 0.});
 }
 
@@ -60,14 +60,14 @@ TEST_CASE(
 
   auto result = scanl(foldable_0i0, init, ones);
 
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.time; }, result)
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.ctrlVal; }, result)
           == std::vector<double>{1., 2., 3.});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.error; }, result)
           == std::vector<double>{1., 1., 1.});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.errSum; }, result)
           == std::vector<double>{1., 2., 3.});
 }
 
@@ -83,13 +83,13 @@ TEST_CASE(
 
   auto result = scanl(foldable_00d, init, ones);
 
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.time; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.time; }, result)
           == std::vector<std::decay_t<decltype(now)>>{now + 1s, now + 2s,
                                                       now + 3s});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.ctrlVal; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.ctrlVal; }, result)
           == std::vector<double>{0., 1., -1.});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.error; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.error; }, result)
           == std::vector<double>{0., 1., 0.});
-  REQUIRE(util::fmap(result, [](const CtrlState &s) { return s.errSum; })
+  REQUIRE(util::fmap([](const CtrlState &s) { return s.errSum; }, result)
           == std::vector<double>{0., 1., 1.});
 }
