@@ -24,5 +24,5 @@ set(testname utest-logic-frp)
 
 set(testname utest-pid-frp)
     add_executable (${testname} ${testname}.cpp)
-    target_link_libraries (${testname} CATCH "-lsodium")
+    target_link_libraries (${testname} CATCH "-lsodium" "-lboost_iostreams -lboost_system -lboost_filesystem")
     create_test(${testname})
