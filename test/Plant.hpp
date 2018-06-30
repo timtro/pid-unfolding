@@ -21,7 +21,7 @@ namespace sim {
 
     void operator()(const PState& x, PState& dxdt, double /*time*/) const {
       dxdt[0] = x[1];
-      dxdt[1] = staticForce - sgn(x[1]) * damping * x[1] * x[1] + x[2];
+      dxdt[1] = staticForce - sgn(x[1]) * damping * x[1] * x[1] - x[2];
       dxdt[2] = 0.;  // Control variable dynamics are external to integration.
     }
   };
