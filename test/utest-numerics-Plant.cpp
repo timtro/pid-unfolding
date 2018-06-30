@@ -34,8 +34,9 @@ TEST_CASE("Study terminal velocity. Starting from rest at the origin …") {
     const auto plant = sim::Plant(4., 1.);
     odeint::runge_kutta4<PState> stepper;
 
-    const auto step = do_step(plant, stepper, dt);
-    PState atTerminalVel = step_while(v_diff_not_within_tolerance, step, x0);
+    const auto plant_step = do_step(plant, stepper, dt);
+    PState atTerminalVel =
+        step_while(v_diff_not_within_tolerance, plant_step, x0);
     REQUIRE(atTerminalVel[1] == Approx(2));
   }
 
@@ -43,8 +44,9 @@ TEST_CASE("Study terminal velocity. Starting from rest at the origin …") {
     const auto plant = sim::Plant(9., 1.);
     odeint::runge_kutta4<PState> stepper;
 
-    const auto step = do_step(plant, stepper, dt);
-    PState atTerminalVel = step_while(v_diff_not_within_tolerance, step, x0);
+    const auto plant_step = do_step(plant, stepper, dt);
+    PState atTerminalVel =
+        step_while(v_diff_not_within_tolerance, plant_step, x0);
     REQUIRE(atTerminalVel[1] == Approx(3));
   }
 }
