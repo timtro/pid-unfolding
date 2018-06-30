@@ -11,7 +11,9 @@
 #include "Plant.hpp"
 #include "test-util.hpp"
 
+#ifdef PLOT
 #include "gnuplot-iostream.h"
+#endif  // PLOT
 
 namespace ode = boost::numeric::odeint;
 using boost::hana::curry;
@@ -56,30 +58,18 @@ TEST_CASE("") {
 
   // Listeners, to monitor and test output.
   auto errorRecord = std::make_shared<std::vector<SignalPt<Real_t>>>();
-  const auto sError_unlisten = sError.listen([errorRecord](auto x) {
-    errorRecord->push_back(x);
-    // std::cout << "     sError(" << errorRecord->size() << "): "
-    //          << " [ " << (x.time - now).count() << " ] {" << x.value << "\n";
-  });
+  const auto sError_unlisten =
+      sError.listen([errorRecord](auto x) { errorRecord->push_back(x); });
 
   auto ctrlRecord = std::make_shared<std::vector<CState>>();
-  const auto cControl_unlisten = cControl.listen([ctrlRecord](auto x) {
-    ctrlRecord->push_back(x);
-    // std::cout << "   cControl(" << ctrlRecord->size() << "): "
-    //           << " [ " << (x.time - now).count() << " ] "
-    //           << "{errSum:" << x.errSum << ", error:" << x.error
-    //           << ", ctrlVal:" << x.ctrlVal << "}\n";
-  });
+  const auto cControl_unlisten =
+      cControl.listen([ctrlRecord](auto x) { ctrlRecord->push_back(x); });
 
   auto plantRecord = std::make_shared<std::vector<SignalPt<PState>>>();
-  const auto sPlantState_unlisten = sPlantState.listen([plantRecord](auto x) {
-    plantRecord->push_back(x);
-    // std::cout << "sPlantState(" << plantRecord->size() << "): "
-    //           << " [ " << (x.time - now).count() << " ] "
-    //           << "{ x:" << x.value[0] << ", v:" << x.value[1]
-    //           << ", u:" << x.value[2] << "}\n";
-  });
+  const auto sPlantState_unlisten =
+      sPlantState.listen([plantRecord](auto x) { plantRecord->push_back(x); });
 
+  // ---
   {
     PState x = {0., 0., 0.};
     sPlantState.send({now, x});
@@ -94,9 +84,11 @@ TEST_CASE("") {
   cControl_unlisten();
   sPlantState_unlisten();
 
+#ifdef PLOT
   Gnuplot gp;
   gp << "plot '-' u 1:2 w l\n";
   gp.send1d(util::fmap(
-      [](auto x) { return std::make_pair((x.time-now).count(), x.value[0]); },
+      [](auto x) { return std::make_pair((x.time - now).count(), x.value[0]); },
       *plantRecord));
+#endif  // PLOT
 }
