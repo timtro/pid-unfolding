@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <optional>
 
@@ -28,12 +29,21 @@ auto pid_algebra(Real kp, Real ki, Real kd) {
   return [kp, ki, kd](SignalPt<Real, Clock> errSigl,
                       PIDState<Real, Clock> prev) -> PIDState<Real, Clock> {
     const auto deltaT =
-        chrono::duration_cast<chrono::seconds>(errSigl.time - prev.time)
+        chrono::duration_cast<chrono::nanoseconds>(errSigl.time - prev.time)
             .count();
-    const auto errSum = prev.errSum + (errSigl.value * deltaT);
-    const auto dErr = (errSigl.value - prev.error) / deltaT;
+    constexpr int nanosecondsPerSecond = 1E9;
+    const auto errSum =
+        prev.errSum + (errSigl.value * deltaT / nanosecondsPerSecond);
+    const auto dErr =
+        (errSigl.value - prev.error) * nanosecondsPerSecond / deltaT;
     const auto ctrlVal = kp * errSigl.value + ki * errSum + kd * dErr;
 
     return {errSigl.time, errSum, errSigl.value, ctrlVal};
   };
+}
+
+template <typename A, typename F>
+[[nodiscard]] auto fmap(F f, const SignalPt<A>& a) {
+  // using B = std::invoke_result_t<F, A>;
+  return SignalPt{a.time, std::invoke(f, a.value)};
 }
