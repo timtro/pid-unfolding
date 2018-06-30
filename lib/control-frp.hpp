@@ -4,8 +4,10 @@
 
 namespace ctrl {
 
-  template <typename Alg, typename U>
-  auto control_frp(Alg alg, const sodium::stream<U>& cError, const U u0) {
+  template <typename Alg, typename X, typename U>
+  [[nodiscard]] inline auto control_frp(Alg alg,
+                                        const sodium::stream<X>& cError,
+                                        const U u0) {
     return cError.template accum<U>(u0, alg);
   }
 
