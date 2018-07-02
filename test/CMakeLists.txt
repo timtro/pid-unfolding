@@ -26,6 +26,7 @@ set(testname utest-pid-frp)
     add_executable (${testname} ${testname}.cpp)
     target_link_libraries (${testname} CATCH "-lsodium")
     if (WITH_PLOT)
-    target_link_libraries (${testname} "-lboost_iostreams -lboost_system -lboost_filesystem")
+    target_link_libraries (${testname} "-lboost_iostreams" "-lboost_system"
+      "-lboost_filesystem")
     endif()
     create_test(${testname})
