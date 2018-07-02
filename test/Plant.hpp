@@ -16,12 +16,14 @@ namespace sim {
   struct Plant {
     const double staticForce;
     const double damping;
+    const double spring;
 
-    Plant(double force, double damp) : staticForce(force), damping(damp) {}
+    Plant(double force, double damp, double spring)
+        : staticForce(force), damping(damp), spring(spring) {}
 
     void operator()(const PState& x, PState& dxdt, double /*time*/) const {
       dxdt[0] = x[1];
-      dxdt[1] = staticForce - sgn(x[1]) * damping * x[1] * x[1] - x[2];
+      dxdt[1] = -spring * x[0] - damping * x[1] - x[2] + staticForce;
       dxdt[2] = 0.;  // Control variable dynamics are external to integration.
     }
   };
