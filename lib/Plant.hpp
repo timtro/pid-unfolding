@@ -1,11 +1,8 @@
 #pragma once
 
-#include <array>
+#include <iostream>
 
-template <typename T>
-inline int sgn(T x) {
-  return (T(0) < x) - (x < T(0));
-}
+#include <array>
 
 //          ┌ · ┐  // Position
 // PState = │ · │  // Speed
@@ -44,5 +41,13 @@ namespace sim {
     } while (p(last, current));
 
     return current;
+  }
+
+  double lyapunov(const PState& s, const PState& setPoint = {0, 0, 0}) {
+    const auto error = setPoint[0] - s[0];
+    const auto lyapunovEnergy = error * error + s[1] * s[1];
+    std::cout << "[ e:" << error << ", v:" << s[1] << ", V:" << lyapunovEnergy
+              << "]\n";
+    return lyapunovEnergy;
   }
 }  // namespace sim

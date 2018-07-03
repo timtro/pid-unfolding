@@ -3,7 +3,7 @@
 #include <boost/numeric/odeint.hpp>
 #include <catch/catch.hpp>
 
-#include "Plant.hpp"
+#include "../lib/Plant.hpp"
 
 using boost::hana::curry;
 namespace odeint = boost::numeric::odeint;

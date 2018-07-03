@@ -4,7 +4,8 @@
 
 #include "../lib/control-frp.hpp"
 #include "../lib/pid.hpp"
-#include "Plant.hpp"
+#include "../lib/Plant.hpp"
+
 #include "test-util.hpp"
 
 using Real_t = double;

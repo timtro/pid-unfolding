@@ -7,14 +7,10 @@
 
 #include <boost/hana.hpp>
 
+#include "SignalPt.hpp"
+
 namespace chrono = std::chrono;
 using namespace std::chrono_literals;
-
-template <typename T = double, typename Clock = chrono::steady_clock>
-struct SignalPt {
-  chrono::time_point<Clock> time;
-  T value;
-};
 
 template <typename Real = double, typename Clock = chrono::steady_clock>
 struct PIDState {
@@ -40,10 +36,4 @@ auto pid_algebra(Real kp, Real ki, Real kd) {
 
     return {errSigl.time, errSum, errSigl.value, ctrlVal};
   };
-}
-
-template <typename A, typename F>
-[[nodiscard]] auto fmap(F f, const SignalPt<A>& a) {
-  // using B = std::invoke_result_t<F, A>;
-  return SignalPt{a.time, std::invoke(f, a.value)};
 }

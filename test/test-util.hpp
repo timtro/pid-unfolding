@@ -2,6 +2,9 @@
 
 #include <type_traits>
 #include <vector>
+#include <chrono>
+
+namespace chrono = std::chrono;
 
 namespace util {
 
@@ -15,5 +18,18 @@ namespace util {
 
     return result;
   }
+
+template <typename Clock = chrono::steady_clock>
+inline constexpr auto double_to_duration(double t) {
+  return chrono::duration_cast<typename Clock::duration>(
+      chrono::duration<double>(t));
+}
+
+template <typename A>
+inline constexpr auto unchrono_sec(A t) {
+  chrono::duration<double> tAsDouble = t;
+  return tAsDouble.count();
+}
+
 
 }  // namespace util

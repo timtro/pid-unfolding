@@ -1,0 +1,19 @@
+#pragma once
+
+#include <chrono>
+#include <functional>
+
+namespace chrono = std::chrono;
+using namespace std::chrono_literals;
+
+template <typename T = double, typename Clock = chrono::steady_clock>
+struct SignalPt {
+  chrono::time_point<Clock> time;
+  T value;
+};
+
+template <typename A, typename F>
+[[nodiscard]] auto fmap(F f, const SignalPt<A>& a) {
+  // using B = std::invoke_result_t<F, A>;
+  return SignalPt{a.time, std::invoke(f, a.value)};
+}
