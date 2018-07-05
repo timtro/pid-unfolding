@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <vector>
 
+#include <sodium/sodium.h>
 #include <catch/catch.hpp>
 
 namespace chrono = std::chrono;
@@ -34,10 +35,20 @@ namespace util {
     return tAsDouble.count();
   }
 
-  bool compareVectors(std::vector<double> a, std::vector<double> b) {
+  template <typename T>
+  auto make_listener(const sodium::stream<T> &s) {
+    auto sRecord = std::make_shared<std::vector<T>>();
+    const auto s_unlisten =
+        s.listen([sRecord](auto x) { sRecord->push_back(x); });
+    return std::make_pair(s_unlisten, sRecord);
+  }
+
+  template <typename T>
+  bool compareVectors(const std::vector<T> &a, const std::vector<T> &b,
+                      T margin) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); i++) {
-      if (a[i] != Approx(b[i]).margin(0.1)) {
+      if (a[i] != Approx(b[i]).margin(margin)) {
         std::cout << a[i] << " Should == " << b[i] << std::endl;
         return false;
       }
