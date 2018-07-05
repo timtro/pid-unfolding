@@ -1,8 +1,11 @@
 #pragma once
 
+#include <chrono>
+#include <iostream>
 #include <type_traits>
 #include <vector>
-#include <chrono>
+
+#include <catch/catch.hpp>
 
 namespace chrono = std::chrono;
 
@@ -19,17 +22,26 @@ namespace util {
     return result;
   }
 
-template <typename Clock = chrono::steady_clock>
-inline constexpr auto double_to_duration(double t) {
-  return chrono::duration_cast<typename Clock::duration>(
-      chrono::duration<double>(t));
-}
+  template <typename Clock = chrono::steady_clock>
+  inline constexpr auto double_to_duration(double t) {
+    return chrono::duration_cast<typename Clock::duration>(
+        chrono::duration<double>(t));
+  }
 
-template <typename A>
-inline constexpr auto unchrono_sec(A t) {
-  chrono::duration<double> tAsDouble = t;
-  return tAsDouble.count();
-}
+  template <typename A>
+  inline constexpr auto unchrono_sec(A t) {
+    chrono::duration<double> tAsDouble = t;
+    return tAsDouble.count();
+  }
 
-
+  bool compareVectors(std::vector<double> a, std::vector<double> b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); i++) {
+      if (a[i] != Approx(b[i]).margin(0.1)) {
+        std::cout << a[i] << " Should == " << b[i] << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
 }  // namespace util
