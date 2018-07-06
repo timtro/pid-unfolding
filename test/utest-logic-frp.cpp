@@ -29,7 +29,7 @@ TEST_CASE(
     const sodium::stream_sink<PState> cError;
     const CState e0 = {now, 0};
 
-    const auto cControl = ctrl::control_frp(inc_sum_alg, cError, e0);
+    const auto cControl = ctrl::control_scan(inc_sum_alg, cError, e0);
 
     auto out = std::make_shared<std::vector<CState>>();
     auto unlisten_cControl =
@@ -58,7 +58,7 @@ TEST_CASE(
 
     const sodium::stream_sink<PState> cError;
     const CState e0 = {now, 1};
-    const auto cControl = ctrl::control_frp(inc_sum_alg, cError, e0);
+    const auto cControl = ctrl::control_scan(inc_sum_alg, cError, e0);
 
     auto out = std::make_shared<std::vector<CState>>();
     auto unlisten_cControl =

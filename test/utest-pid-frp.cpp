@@ -26,18 +26,20 @@ using CState = PIDState<Real_t>;
 constexpr double dt = 0.01;  // seconds.
 constexpr auto dts = util::double_to_duration(dt);
 
-inline SignalPt<double> to_error(const SignalPt<PState>& a, const PState& b) {
-  return {a.time, a.value[0] - b[0]};
-}
-
 const auto now = chrono::steady_clock::now();
 
 constexpr Real_t mass = 1.;
 constexpr Real_t damp = 10. / mass;
 constexpr Real_t spring = 20. / mass;
-constexpr Real_t staticForce = -1. / mass;
+constexpr Real_t staticForce = 1. / mass;
 constexpr Real_t simTime = 2;  // seconds
 const sim::Plant plant(staticForce, damp, spring);
+
+ode::runge_kutta4<PState> stepper;
+
+inline SignalPt<double> to_error(const SignalPt<PState>& a, const PState& b) {
+  return {a.time, a.value[0] - b[0]};
+}
 
 TEST_CASE(
     "Test A (Proportional Control)—Reproduct known (analytical) result, "
@@ -55,26 +57,13 @@ TEST_CASE(
   // Setpoint to x = 1, for step response.
   const sodium::cell<PState> setPoint({1., 0., 0.});
   const sodium::stream_sink<SignalPt<PState>> sPlantState;
-  const auto sError = sPlantState.snapshot(setPoint, &to_error);
 
   const CState u0 = {now - dts, 0., 0., 0.};
-  // const auto cControl = ctrl::control_frp(pid_algebra(Kp, Ki, Kd), sError,
-  // u0); Or equivalently,
-  const auto cControl = sError.accum<CState>(u0, pid_algebra(Kp, Ki, Kd));
-
-  ode::runge_kutta4<PState> stepper;
-  // do_step : Plant → Stepper → double → PState → PState
-  //                             ^ dt     ^ x[k]   ^ x[k+1]
-  constexpr auto do_step =
-      curry<4>(sim::do_step_with<ode::runge_kutta4<PState>>);
-
-  // plant_step : PState → PState
-  const auto plant_step = do_step(plant, stepper, dt);
-
-  // ---
+  auto cControl = ctrl::control_frp(
+      pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
+      static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
 
   auto [sPlantState_unlisten, plantRecord] = util::make_listener(sPlantState);
-
   {
     PState x = {0., 0., 0.};
     sPlantState.send({now, x});
@@ -84,7 +73,6 @@ TEST_CASE(
       sPlantState.send({now + k * dts, x});
     }
   }
-
   sPlantState_unlisten();
 
   {
@@ -149,26 +137,13 @@ TEST_CASE(
   // Setpoint to x = 1, for step response.
   const sodium::cell<PState> setPoint({1., 0., 0.});
   const sodium::stream_sink<SignalPt<PState>> sPlantState;
-  const auto sError = sPlantState.snapshot(setPoint, &to_error);
 
   const CState u0 = {now - dts, 0., 0., 0.};
-  // const auto cControl = ctrl::control_frp(pid_algebra(Kp, Ki, Kd), sError,
-  // u0); Or equivalently,
-  const auto cControl = sError.accum<CState>(u0, pid_algebra(Kp, Ki, Kd));
-
-  ode::runge_kutta4<PState> stepper;
-  // do_step : Plant → Stepper → double → PState → PState
-  //                             ^ dt     ^ x[k]   ^ x[k+1]
-  constexpr auto do_step =
-      curry<4>(sim::do_step_with<ode::runge_kutta4<PState>>);
-
-  // plant_step : PState → PState
-  const auto plant_step = do_step(plant, stepper, dt);
-
-  // ---
+  auto cControl = ctrl::control_frp(
+      pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
+      static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
 
   auto [sPlantState_unlisten, plantRecord] = util::make_listener(sPlantState);
-
   {
     PState x = {0., 0., 0.};
     sPlantState.send({now, x});
@@ -178,7 +153,6 @@ TEST_CASE(
       sPlantState.send({now + k * dts, x});
     }
   }
-
   sPlantState_unlisten();
 
   {
@@ -241,26 +215,13 @@ TEST_CASE(
   // Setpoint to x = 1, for step response.
   const sodium::cell<PState> setPoint({1., 0., 0.});
   const sodium::stream_sink<SignalPt<PState>> sPlantState;
-  const auto sError = sPlantState.snapshot(setPoint, &to_error);
 
   const CState u0 = {now - dts, 0., 0., 0.};
-  // const auto cControl = ctrl::control_frp(pid_algebra(Kp, Ki, Kd), sError,
-  // u0); Or equivalently,
-  const auto cControl = sError.accum<CState>(u0, pid_algebra(Kp, Ki, Kd));
-
-  ode::runge_kutta4<PState> stepper;
-  // do_step : Plant → Stepper → double → PState → PState
-  //                             ^ dt     ^ x[k]   ^ x[k+1]
-  constexpr auto do_step =
-      curry<4>(sim::do_step_with<ode::runge_kutta4<PState>>);
-
-  // plant_step : PState → PState
-  const auto plant_step = do_step(plant, stepper, dt);
-
-  // ---
+  auto cControl = ctrl::control_frp(
+      pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
+      static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
 
   auto [sPlantState_unlisten, plantRecord] = util::make_listener(sPlantState);
-
   {
     PState x = {0., 0., 0.};
     sPlantState.send({now, x});
@@ -270,7 +231,6 @@ TEST_CASE(
       sPlantState.send({now + k * dts, x});
     }
   }
-
   sPlantState_unlisten();
 
   {
@@ -324,8 +284,7 @@ TEST_CASE(
     "index.php?example=Introduction&section=ControlPID\n"
     "A damped-driven harmonic oscillator under the influence of a "
     "PID-controller, both with parameters defined in the test, should produce "
-    "a "
-    "step-response within a margin of the analytical solution.",
+    "a step-response within a margin of the analytical solution.",
     "[Test D], [P-controller]") {
   constexpr Real_t Kp = 350.;
   constexpr Real_t Ki = 300.;
@@ -334,26 +293,13 @@ TEST_CASE(
   // Setpoint to x = 1, for step response.
   const sodium::cell<PState> setPoint({1., 0., 0.});
   const sodium::stream_sink<SignalPt<PState>> sPlantState;
-  const auto sError = sPlantState.snapshot(setPoint, &to_error);
 
   const CState u0 = {now - dts, 0., 0., 0.};
-  // const auto cControl = ctrl::control_frp(pid_algebra(Kp, Ki, Kd), sError,
-  // u0); Or equivalently,
-  const auto cControl = sError.accum<CState>(u0, pid_algebra(Kp, Ki, Kd));
-
-  ode::runge_kutta4<PState> stepper;
-  // do_step : Plant → Stepper → double → PState → PState
-  //                             ^ dt     ^ x[k]   ^ x[k+1]
-  constexpr auto do_step =
-      curry<4>(sim::do_step_with<ode::runge_kutta4<PState>>);
-
-  // plant_step : PState → PState
-  const auto plant_step = do_step(plant, stepper, dt);
-
-  // ---
+  auto cControl = ctrl::control_frp(
+      pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
+      static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
 
   auto [sPlantState_unlisten, plantRecord] = util::make_listener(sPlantState);
-
   {
     PState x = {0., 0., 0.};
     sPlantState.send({now, x});
