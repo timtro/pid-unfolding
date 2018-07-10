@@ -12,6 +12,7 @@
 #include "../lib/control-frp.hpp"
 #include "../lib/pid.hpp"
 
+#include "calculations/analytical_solutions.cpp"
 #include "util.hpp"
 
 #ifdef PLOT
@@ -77,18 +78,10 @@ TEST_CASE(
 
   {
     constexpr double margin = 0.1;
-    constexpr auto sys = [](double t) {
-      return std::exp(-5. * t)
-                 * (-(150. * std::sin(std::sqrt(285.) * t))
-                        / (31. * std::sqrt(285.))
-                    - (30. * std::cos(std::sqrt(285.) * t)) / 31.)
-             + 30. / 31.;
-    };
-
     auto frpPositions =
         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
     auto realPositions = util::fmap(
-        [&sys](auto x) { return sys(util::unchrono_sec(x.time - now)); },
+        [](auto x) { return analyt::test_A(util::unchrono_sec(x.time - now)); },
         *plantRecord);
 
 #ifdef PLOT
@@ -101,9 +94,12 @@ TEST_CASE(
        << "' w filledcu fs solid fc rgb '#6699FF55', '-' u 1:2 title 'Test "
           "result' w l\n";
     auto range = util::fmap(
-        [&sys](auto x) {
+        [](auto x) {
+          // with…
           const double t = util::unchrono_sec(x.time - now);
-          return std::make_tuple(t, sys(t) + margin, sys(t) - margin);
+          const double analyt = analyt::test_A(t);
+
+          return std::make_tuple(t, analyt + margin, analyt - margin);
         },
         *plantRecord);
 
@@ -157,16 +153,10 @@ TEST_CASE(
 
   {
     constexpr double margin = 0.1;
-    constexpr auto sys = [](double t) {
-      return 0.10118 * std::exp(-11.145 * t) * std::sin(15.511 * t)
-             - 1.0944 * std::exp(-11.145 * t) * std::cos(15.511 * t)
-             + 0.15697 * std::exp(-87.708 * t) + 0.93749;
-    };
-
     auto frpPositions =
         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
     auto realPositions = util::fmap(
-        [&sys](auto x) { return sys(util::unchrono_sec(x.time - now)); },
+        [](auto x) { return analyt::test_B(util::unchrono_sec(x.time - now)); },
         *plantRecord);
 
 #ifdef PLOT
@@ -179,9 +169,12 @@ TEST_CASE(
        << "' w filledcu fs solid fc rgb '#6699FF55', '-' u 1:2 title 'Test "
           "result' w l\n";
     auto range = util::fmap(
-        [&sys](auto x) {
+        [](auto x) {
+          // with…
           const double t = util::unchrono_sec(x.time - now);
-          return std::make_tuple(t, sys(t) + margin, sys(t) - margin);
+          const double analyt = analyt::test_B(t);
+
+          return std::make_tuple(t, analyt + margin, analyt - margin);
         },
         *plantRecord);
 
@@ -235,16 +228,11 @@ TEST_CASE(
 
   {
     constexpr double margin = 0.1;
-    constexpr auto sys = [](double t) {
-      return -0.86502 * std::exp(-3.9537 * t) * std::sin(4.2215 * t)
-             - 0.83773 * std::exp(-3.9537 * t) * std::cos(4.2215 * t)
-             - 0.16226 * std::exp(-2.0924 * t) + 0.99999;
-    };
 
     auto frpPositions =
         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
     auto realPositions = util::fmap(
-        [&sys](auto x) { return sys(util::unchrono_sec(x.time - now)); },
+        [](auto x) { return analyt::test_C(util::unchrono_sec(x.time - now)); },
         *plantRecord);
 
 #ifdef PLOT
@@ -257,9 +245,12 @@ TEST_CASE(
        << "' w filledcu fs solid fc rgb '#6699FF55', '-' u 1:2 title 'Test "
           "result' w l\n";
     auto range = util::fmap(
-        [&sys](auto x) {
+        [](auto x) {
+          // with…
           const double t = util::unchrono_sec(x.time - now);
-          return std::make_tuple(t, sys(t) + margin, sys(t) - margin);
+          const double analyt = analyt::test_C(t);
+
+          return std::make_tuple(t, analyt + margin, analyt - margin);
         },
         *plantRecord);
 
@@ -314,17 +305,11 @@ TEST_CASE(
 
   {
     constexpr double margin = 0.2;
-    constexpr auto sys = [](double t) {
-      return -0.88562 * std::exp(-51.774 * t) * std::sin(54.918 * t)
-             - 0.93656 * std::exp(-51.774 * t) * std::cos(54.918 * t)
-             - 0.044211 * std::exp(-0.95866 * t)
-             - 0.019219 * std::exp(-5.4933 * t) + 0.99999;
-    };
 
     auto frpPositions =
         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
     auto realPositions = util::fmap(
-        [&sys](auto x) { return sys(util::unchrono_sec(x.time - now)); },
+        [](auto x) { return analyt::test_D(util::unchrono_sec(x.time - now)); },
         *plantRecord);
 
 #ifdef PLOT
@@ -337,9 +322,12 @@ TEST_CASE(
        << "' w filledcu fs solid fc rgb '#6699FF55', '-' u 1:2 title 'Test "
           "result' w l\n";
     auto range = util::fmap(
-        [&sys](auto x) {
+        [](auto x) {
+          // with…
           const double t = util::unchrono_sec(x.time - now);
-          return std::make_tuple(t, sys(t) + margin, sys(t) - margin);
+          const double analyt = analyt::test_D(t);
+
+          return std::make_tuple(t, analyt + margin, analyt - margin);
         },
         *plantRecord);
 

@@ -17,11 +17,6 @@ set(testname utest-numerics-Plant)
     target_link_libraries (${testname} CATCH)
     create_test(${testname})
 
-set(testname utest-logic-frp)
-    add_executable (${testname} ${testname}.cpp)
-    target_link_libraries (${testname} CATCH "-lsodium")
-    create_test(${testname})
-
 set(testname utest-pid-frp)
     add_executable (${testname} ${testname}.cpp)
     target_link_libraries (${testname} CATCH "-lsodium")
