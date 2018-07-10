@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 #include <array>
 
 //          ┌ · ┐  // Position
@@ -46,8 +44,7 @@ namespace sim {
   double lyapunov(const PState& s, const PState& setPoint = {0, 0, 0}) {
     const auto error = setPoint[0] - s[0];
     const auto lyapunovEnergy = error * error + s[1] * s[1];
-    std::cout << "[ e:" << error << ", v:" << s[1] << ", V:" << lyapunovEnergy
-              << "]\n";
+
     return lyapunovEnergy;
   }
 }  // namespace sim
