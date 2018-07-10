@@ -12,7 +12,7 @@
 #include "../lib/control-frp.hpp"
 #include "../lib/pid.hpp"
 
-#include "test-util.hpp"
+#include "util.hpp"
 
 #ifdef PLOT
 #include "gnuplot-iostream.h"

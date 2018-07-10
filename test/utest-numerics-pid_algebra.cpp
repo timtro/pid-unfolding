@@ -3,7 +3,7 @@
 #include <catch/catch.hpp>
 
 #include "../lib/pid.hpp"
-#include "test-util.hpp"
+#include "util.hpp"
 
 using Real_t = double;
 using RealSignalVector = std::vector<SignalPt<Real_t>>;

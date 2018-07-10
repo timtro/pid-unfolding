@@ -6,7 +6,7 @@
 #include "../lib/pid.hpp"
 #include "../lib/Plant.hpp"
 
-#include "test-util.hpp"
+#include "util.hpp"
 
 using Real_t = double;
 
