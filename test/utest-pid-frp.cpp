@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include <sodium/sodium.h>
-#include <boost/format.hpp>
 #include <boost/hana/functional/curry.hpp>
 #include <boost/numeric/odeint.hpp>
 #include <catch/catch.hpp>
@@ -17,6 +16,7 @@
 
 #ifdef PLOT
 #include "gnuplot-iostream.h"
+#include "plot-helpers.hpp"
 #endif  // PLOT
 
 namespace ode = boost::numeric::odeint;
@@ -85,32 +85,16 @@ TEST_CASE(
         *plantRecord);
 
 #ifdef PLOT
-    Gnuplot gp;
-    gp << "set title 'Test A: pid(" << boost::format("%.2f") % Kp << ", "
-       << boost::format("%.2f") % Ki << ", " << boost::format("%.2f") % Kd
-       << ")\n";
-    gp << "plot '-' u 1:2:3 title 'Acceptable margin: analytical ±"
-       << boost::format("%.3f") % margin
-       << "' w filledcu fs solid fc rgb '#6699FF55', '-' u 1:2 title 'Test "
-          "result' w l\n";
-    auto range = util::fmap(
-        [](auto x) {
-          // with…
-          const double t = util::unchrono_sec(x.time - now);
-          const double analyt = analyt::test_A(t);
 
-          return std::make_tuple(t, analyt + margin, analyt - margin);
-        },
-        *plantRecord);
-
-    gp.send1d(range);
-    gp.send1d(util::fmap(
+    const auto testData = util::fmap(
         [](const auto& x) {
           return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
         },
-        *plantRecord));
-    gp << "pause mouse key\nwhile (MOUSE_CHAR ne 'q') { pause mouse "
-          "key; }\n";
+        *plantRecord);
+
+    plot_with_tube("Test A, (Kp, Ki, Kd) = (300, 0, 0).", testData,
+                   &analyt::test_A, margin);
+
 #endif  // PLOT
 
     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
@@ -160,32 +144,14 @@ TEST_CASE(
         *plantRecord);
 
 #ifdef PLOT
-    Gnuplot gp;
-    gp << "set title 'Test B: pid(" << boost::format("%.2f") % Kp << ", "
-       << boost::format("%.2f") % Ki << ", " << boost::format("%.2f") % Kd
-       << ")\n";
-    gp << "plot '-' u 1:2:3 title 'Acceptable margin: analytical ±"
-       << boost::format("%.3f") % margin
-       << "' w filledcu fs solid fc rgb '#6699FF55', '-' u 1:2 title 'Test "
-          "result' w l\n";
-    auto range = util::fmap(
-        [](auto x) {
-          // with…
-          const double t = util::unchrono_sec(x.time - now);
-          const double analyt = analyt::test_B(t);
-
-          return std::make_tuple(t, analyt + margin, analyt - margin);
-        },
-        *plantRecord);
-
-    gp.send1d(range);
-    gp.send1d(util::fmap(
+    const auto testData = util::fmap(
         [](const auto& x) {
           return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
         },
-        *plantRecord));
-    gp << "pause mouse key\nwhile (MOUSE_CHAR ne 'q') { pause mouse "
-          "key; }\n";
+        *plantRecord);
+
+    plot_with_tube("Test B, (Kp, Ki, Kd) = (300, 0, 10).", testData,
+                   &analyt::test_B, margin);
 #endif  // PLOT
 
     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
@@ -236,32 +202,14 @@ TEST_CASE(
         *plantRecord);
 
 #ifdef PLOT
-    Gnuplot gp;
-    gp << "set title 'Test C: pid(" << boost::format("%.2f") % Kp << ", "
-       << boost::format("%.2f") % Ki << ", " << boost::format("%.2f") % Kd
-       << ")\n";
-    gp << "plot '-' u 1:2:3 title 'Acceptable margin: analytical ±"
-       << boost::format("%.3f") % margin
-       << "' w filledcu fs solid fc rgb '#6699FF55', '-' u 1:2 title 'Test "
-          "result' w l\n";
-    auto range = util::fmap(
-        [](auto x) {
-          // with…
-          const double t = util::unchrono_sec(x.time - now);
-          const double analyt = analyt::test_C(t);
-
-          return std::make_tuple(t, analyt + margin, analyt - margin);
-        },
-        *plantRecord);
-
-    gp.send1d(range);
-    gp.send1d(util::fmap(
+    const auto testData = util::fmap(
         [](const auto& x) {
           return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
         },
-        *plantRecord));
-    gp << "pause mouse key\nwhile (MOUSE_CHAR ne 'q') { pause mouse "
-          "key; }\n";
+        *plantRecord);
+
+    plot_with_tube("Test C, (Kp, Ki, Kd) = (30, 70, 0).", testData,
+                   &analyt::test_C, margin);
 #endif  // PLOT
 
     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
@@ -313,32 +261,14 @@ TEST_CASE(
         *plantRecord);
 
 #ifdef PLOT
-    Gnuplot gp;
-    gp << "set title 'Test D: pid(" << boost::format("%.2f") % Kp << ", "
-       << boost::format("%.2f") % Ki << ", " << boost::format("%.2f") % Kd
-       << ")\n";
-    gp << "plot '-' u 1:2:3 title 'Acceptable margin: analytical ±"
-       << boost::format("%.3f") % margin
-       << "' w filledcu fs solid fc rgb '#6699FF55', '-' u 1:2 title 'Test "
-          "result' w l\n";
-    auto range = util::fmap(
-        [](auto x) {
-          // with…
-          const double t = util::unchrono_sec(x.time - now);
-          const double analyt = analyt::test_D(t);
-
-          return std::make_tuple(t, analyt + margin, analyt - margin);
-        },
-        *plantRecord);
-
-    gp.send1d(range);
-    gp.send1d(util::fmap(
+    const auto testData = util::fmap(
         [](const auto& x) {
           return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
         },
-        *plantRecord));
-    gp << "pause mouse key\nwhile (MOUSE_CHAR ne 'q') { pause mouse "
-          "key; }\n";
+        *plantRecord);
+
+    plot_with_tube("Test B, (Kp, Ki, Kd) = (350, 300, 50).", testData,
+                   &analyt::test_D, margin);
 #endif  // PLOT
 
     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
