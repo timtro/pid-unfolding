@@ -4,6 +4,8 @@
 #include <iostream>
 #include <type_traits>
 #include <vector>
+#include <optional>
+#include <utility>
 
 #include <sodium/sodium.h>
 #include <catch/catch.hpp>
@@ -21,6 +23,31 @@ namespace util {
     for (const auto &each : v) result.push_back(f(each));
 
     return result;
+  }
+
+  // unfold : ( (A → optional<pair<A, B>>), A ) → vector<B>
+  template <typename F, typename A>
+  auto unfold(F f, A a0) {
+    // will fail if `f` doesn't return a pair when given an A.
+    using B = decltype(std::declval<std::invoke_result_t<F, A>>()->second);
+    static_assert(std::is_same_v<std::invoke_result_t<F, A>,
+                                 std::optional<std::pair<A, B>>>);
+
+    std::vector<B> bs;
+
+    auto resultAB = f(a0);
+    if (resultAB)
+      bs.push_back(resultAB->second);
+    else
+      return bs;
+
+    while (1) {
+      resultAB = f(resultAB->first);
+      if (resultAB)
+        bs.push_back(resultAB->second);
+      else
+        return bs;
+    }
   }
 
   template <typename Clock = chrono::steady_clock>

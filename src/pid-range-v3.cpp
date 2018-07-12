@@ -1,11 +1,3 @@
-#include <cmath>
-#include <iostream>
-#include <optional>
-
-// temporary, for unfold:
-#include <type_traits>
-#include <utility>
-
 #include <boost/numeric/odeint.hpp>
 #include <catch/catch.hpp>
 #include <range/v3/all.hpp>
@@ -49,71 +41,14 @@ const std::vector<chrono::time_point<chrono::steady_clock>> ts =
     view::iota(1) | view::transform([](auto k) { return now + k * dts; })
     | view::take_while([](auto t) { return t > (now + 2s); });
 
-// unfold : ( (A → optional<pair<A, B>>), A ) → vector<B>
-template <typename F, typename A>
-auto unfold(F f, A a0) {
-  // will fail if `f` doesn't return a pair when given an A.
-  using B = decltype(std::declval<std::invoke_result_t<F, A>>()->second);
-  static_assert(std::is_same_v<std::invoke_result_t<F, A>,
-                               std::optional<std::pair<A, B>>>);
-
-  std::vector<B> bs;
-
-  auto resultAB = f(a0);
-  if (resultAB)
-    bs.push_back(resultAB->second);
-  else
-    return bs;
-
-  while (1) {
-    resultAB = f(resultAB->first);
-    if (resultAB)
-      bs.push_back(resultAB->second);
-    else
-      return bs;
-  }
-}
-
-TEST_CASE(
-    "Anamorphic fold should return an empty list if the coalgebra returns a "
-    "nullopt given the seed.") {
-  auto coalg = [](int) -> std::optional<std::pair<int, int>> { return {}; };
-
-  REQUIRE(unfold(coalg, 41) == std::vector<int>{});
-}
-
-TEST_CASE(
-    "Given a coalg : int → optional<pair<int, bool>>, and an int seed, the "
-    "unfold function should return a vector<bool>.") {
-  auto coalg = [](int) -> std::optional<std::pair<int, bool>> { return {}; };
-
-  REQUIRE(unfold(coalg, 41) == std::vector<bool>{});
-}
-
-TEST_CASE(
-    "Anamorphic unfold should count down from seed to zero (inclusive) given "
-    "this coalgebra") {
-  auto coalg = [](int current) -> std::optional<std::pair<int, int>> {
-    auto oneSmaller = current - 1;
-    if (current < 0)
-      return {};
-    else
-      return {{oneSmaller, current}};
-  };
-
-  auto TenToZero = unfold(coalg, 10);
-
-  REQUIRE(TenToZero == std::vector{10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0});
-}
-
 // TEST_CASE(
 //     "Test A (Proportional Control)—Reproduct known (analytical) result, "
 //     "borrowed from\n"
 //     "http://ctms.engin.umich.edu/CTMS/"
 //     "index.php?example=Introduction&section=ControlPID\n"
 //     "A damped-driven harmonic oscillator under the influence of a "
-//     "P-controller, both with parameters defined in the test, should produce a"
-//     "step-response within a margin of the analytical solution.",
+//     "P-controller, both with parameters defined in the test, should produce
+//     a" "step-response within a margin of the analytical solution.",
 //     "[Test 1], [P-controller]") {
 //   constexpr double Kp = 300.;
 //   constexpr double Ki = 0.;
@@ -145,14 +80,15 @@ TEST_CASE(
 //     auto frpPositions =
 //         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
 //     auto realPositions = util::fmap(
-//         [](auto x) { return analyt::test_A(util::unchrono_sec(x.time - now)); },
-//         *plantRecord);
+//         [](auto x) { return analyt::test_A(util::unchrono_sec(x.time - now));
+//         }, *plantRecord);
 //
 // #ifdef PLOT
 //
 //     const auto testData = util::fmap(
 //         [](const auto& x) {
-//           return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
+//           return std::make_pair(util::unchrono_sec(x.time - now),
+//           x.value[0]);
 //         },
 //         *plantRecord);
 //

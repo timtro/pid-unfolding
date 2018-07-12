@@ -11,3 +11,8 @@ set(testname utest-numerics-Plant)
     add_executable (${testname} ${testname}.cpp)
     target_link_libraries (${testname} CATCH)
     create_test(${testname})
+
+set(testname utest-unfold)
+    add_executable (${testname} ${testname}.cpp)
+    target_link_libraries (${testname} CATCH)
+    create_test(${testname})
