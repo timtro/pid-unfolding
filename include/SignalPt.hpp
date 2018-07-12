@@ -12,8 +12,10 @@ struct SignalPt {
   T value;
 };
 
-template <typename A, typename F>
-[[nodiscard]] auto fmap(F f, const SignalPt<A>& a) {
-  // using B = std::invoke_result_t<F, A>;
-  return SignalPt{a.time, std::invoke(f, a.value)};
-}
+namespace util {
+  template <typename A, typename F>
+  [[nodiscard]] auto fmap(F f, const SignalPt<A>& a) {
+    // using B = std::invoke_result_t<F, A>;
+    return SignalPt{a.time, std::invoke(f, a.value)};
+  }
+}  // namespace util

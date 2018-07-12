@@ -3,7 +3,7 @@
 #include <catch/catch.hpp>
 
 #include "../include/pid.hpp"
-#include "../include/util.hpp"
+#include "../include/util/util.hpp"
 
 using RealSignalVector = std::vector<SignalPt<double>>;
 using CtrlState = PIDState<>;

@@ -9,7 +9,8 @@
 #include "../include/Plant.hpp"
 #include "../include/control-frp.hpp"
 #include "../include/pid.hpp"
-#include "../include/util.hpp"
+#include "../include/util/util.hpp"
+#include "../include/util/util-frp.hpp"
 
 #include "calculations/analytical_solutions.cpp"
 
