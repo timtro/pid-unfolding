@@ -20,6 +20,7 @@
 
 namespace ode = boost::numeric::odeint;
 using CState = PIDState<>;
+using sim::PState;
 
 constexpr double dt = 0.01;  // seconds.
 constexpr auto dts = util::double_to_duration(dt);

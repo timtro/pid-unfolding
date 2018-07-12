@@ -6,6 +6,7 @@
 #include "../include/Plant.hpp"
 
 using boost::hana::curry;
+using sim::PState;
 namespace odeint = boost::numeric::odeint;
 
 TEST_CASE(

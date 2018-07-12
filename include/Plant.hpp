@@ -5,9 +5,10 @@
 //          ┌ · ┐  // Position
 // PState = │ · │  // Speed
 //          └ · ┘  // control variable, thrown in for Boost.odeint.
-using PState = std::array<double, 3>;
 
 namespace sim {
+  using PState = std::array<double, 3>;
+
   struct Plant {
     const double staticForce;
     const double damping;

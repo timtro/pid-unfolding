@@ -24,19 +24,19 @@
 
 using namespace ranges;
 namespace ode = boost::numeric::odeint;
-using Real_t = double;
-using CState = PIDState<Real_t>;
+using CState = PIDState<double>;
+using PState = sim::PState;
 
 constexpr double dt = 0.01;  // seconds.
 constexpr auto dts = util::double_to_duration(dt);
 
 const auto now = chrono::steady_clock::now();
 
-constexpr Real_t mass = 1.;
-constexpr Real_t damp = 10. / mass;
-constexpr Real_t spring = 20. / mass;
-constexpr Real_t staticForce = 1. / mass;
-constexpr Real_t simTime = 2;  // seconds
+constexpr double mass = 1.;
+constexpr double damp = 10. / mass;
+constexpr double spring = 20. / mass;
+constexpr double staticForce = 1. / mass;
+constexpr double simTime = 2;  // seconds
 const sim::Plant plant(staticForce, damp, spring);
 
 ode::runge_kutta4<PState> stepper;
@@ -115,9 +115,9 @@ TEST_CASE(
 //     "P-controller, both with parameters defined in the test, should produce a"
 //     "step-response within a margin of the analytical solution.",
 //     "[Test 1], [P-controller]") {
-//   constexpr Real_t Kp = 300.;
-//   constexpr Real_t Ki = 0.;
-//   constexpr Real_t Kd = 0.;
+//   constexpr double Kp = 300.;
+//   constexpr double Ki = 0.;
+//   constexpr double Kd = 0.;
 //
 //   const auto pid_controller = pid_algebra(Kp, Ki, Kd);
 //
@@ -174,9 +174,9 @@ TEST_CASE(
 //     "PD-controller, both with parameters defined in the test, should produce
 //     a " "step-response within a margin of the analytical solution.",
 //     "[Test 1], [P-controller]") {
-//   constexpr Real_t Kp = 300.;
-//   constexpr Real_t Ki = 0.;
-//   constexpr Real_t Kd = 10.;
+//   constexpr double Kp = 300.;
+//   constexpr double Ki = 0.;
+//   constexpr double Kd = 10.;
 //
 //   // Setpoint to x = 1, for step response.
 //   const sodium::cell<PState> setPoint({1., 0., 0.});
@@ -233,9 +233,9 @@ TEST_CASE(
 //     "PI-controller, both with parameters defined in the test, should produce
 //     a " "step-response within a margin of the analytical solution.",
 //     "[Test 1], [P-controller]") {
-//   constexpr Real_t Kp = 30.;
-//   constexpr Real_t Ki = 70.;
-//   constexpr Real_t Kd = 0.;
+//   constexpr double Kp = 30.;
+//   constexpr double Ki = 70.;
+//   constexpr double Kd = 0.;
 //
 //   // Setpoint to x = 1, for step response.
 //   const sodium::cell<PState> setPoint({1., 0., 0.});
@@ -293,9 +293,9 @@ TEST_CASE(
 //     "PID-controller, both with parameters defined in the test, should produce
 //     " "a step-response within a margin of the analytical solution.",
 //     "[Test D], [P-controller]") {
-//   constexpr Real_t Kp = 350.;
-//   constexpr Real_t Ki = 300.;
-//   constexpr Real_t Kd = 50.;
+//   constexpr double Kp = 350.;
+//   constexpr double Ki = 300.;
+//   constexpr double Kd = 50.;
 //
 //   // Setpoint to x = 1, for step response.
 //   const sodium::cell<PState> setPoint({1., 0., 0.});
