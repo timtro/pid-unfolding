@@ -1,0 +1,345 @@
+#include <cmath>
+#include <iostream>
+#include <optional>
+
+// temporary, for unfold:
+#include <type_traits>
+#include <utility>
+
+#include <boost/numeric/odeint.hpp>
+#include <catch/catch.hpp>
+#include <range/v3/all.hpp>
+
+#include "../include/Plant.hpp"
+#include "../include/control-frp.hpp"
+#include "../include/pid.hpp"
+#include "../include/util.hpp"
+
+#include "calculations/analytical_solutions.cpp"
+
+#ifdef PLOT
+#include "../include/plotting/gnuplot-iostream.h"
+#include "../include/plotting/plot-helpers.hpp"
+#endif  // PLOT
+
+using namespace ranges;
+namespace ode = boost::numeric::odeint;
+using Real_t = double;
+using CState = PIDState<Real_t>;
+
+constexpr double dt = 0.01;  // seconds.
+constexpr auto dts = util::double_to_duration(dt);
+
+const auto now = chrono::steady_clock::now();
+
+constexpr Real_t mass = 1.;
+constexpr Real_t damp = 10. / mass;
+constexpr Real_t spring = 20. / mass;
+constexpr Real_t staticForce = 1. / mass;
+constexpr Real_t simTime = 2;  // seconds
+const sim::Plant plant(staticForce, damp, spring);
+
+ode::runge_kutta4<PState> stepper;
+
+inline SignalPt<double> to_error(const SignalPt<PState>& a, const PState& b) {
+  return {a.time, a.value[0] - b[0]};
+}
+
+const std::vector<chrono::time_point<chrono::steady_clock>> ts =
+    view::iota(1) | view::transform([](auto k) { return now + k * dts; })
+    | view::take_while([](auto t) { return t > (now + 2s); });
+
+// unfold : ( (A → optional<pair<A, B>>), A ) → vector<B>
+template <typename F, typename A>
+auto unfold(F f, A a0) {
+  // will fail if `f` doesn't return a pair when given an A.
+  using B = decltype(std::declval<std::invoke_result_t<F, A>>()->second);
+  static_assert(std::is_same_v<std::invoke_result_t<F, A>,
+                               std::optional<std::pair<A, B>>>);
+
+  std::vector<B> bs;
+
+  auto resultAB = f(a0);
+  if (resultAB)
+    bs.push_back(resultAB->second);
+  else
+    return bs;
+
+  while (1) {
+    resultAB = f(resultAB->first);
+    if (resultAB)
+      bs.push_back(resultAB->second);
+    else
+      return bs;
+  }
+}
+
+TEST_CASE(
+    "Anamorphic fold should return an empty list if the coalgebra returns a "
+    "nullopt given the seed.") {
+  auto coalg = [](int) -> std::optional<std::pair<int, int>> { return {}; };
+
+  REQUIRE(unfold(coalg, 41) == std::vector<int>{});
+}
+
+TEST_CASE(
+    "Given a coalg : int → optional<pair<int, bool>>, and an int seed, the "
+    "unfold function should return a vector<bool>.") {
+  auto coalg = [](int) -> std::optional<std::pair<int, bool>> { return {}; };
+
+  REQUIRE(unfold(coalg, 41) == std::vector<bool>{});
+}
+
+TEST_CASE(
+    "Anamorphic unfold should count down from seed to zero (inclusive) given "
+    "this coalgebra") {
+  auto coalg = [](int current) -> std::optional<std::pair<int, int>> {
+    auto oneSmaller = current - 1;
+    if (current < 0)
+      return {};
+    else
+      return {{oneSmaller, current}};
+  };
+
+  auto TenToZero = unfold(coalg, 10);
+
+  REQUIRE(TenToZero == std::vector{10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0});
+}
+
+// TEST_CASE(
+//     "Test A (Proportional Control)—Reproduct known (analytical) result, "
+//     "borrowed from\n"
+//     "http://ctms.engin.umich.edu/CTMS/"
+//     "index.php?example=Introduction&section=ControlPID\n"
+//     "A damped-driven harmonic oscillator under the influence of a "
+//     "P-controller, both with parameters defined in the test, should produce a"
+//     "step-response within a margin of the analytical solution.",
+//     "[Test 1], [P-controller]") {
+//   constexpr Real_t Kp = 300.;
+//   constexpr Real_t Ki = 0.;
+//   constexpr Real_t Kd = 0.;
+//
+//   const auto pid_controller = pid_algebra(Kp, Ki, Kd);
+//
+//   const CState u0 = {now - dts, 0., 0., 0.};
+//   const PState x0 = {0., 0., 0.};
+//
+//   const auto stepResponseCoalgebra = [&pid_controller](auto xu)
+//       -> std::optional<std::pair<std::pair<SignalPt<PState>, CState>,
+//                                  std::pair<SignalPt<PState>, CState>>> {
+//     const auto [tx, u] = xu;
+//
+//     const auto thisTime = tx.time;
+//     const auto x = tx.value;
+//     assert(thisTime == u.time);
+//     const auto nextTime = thisTime + dts;
+//
+//     CState nextControllerState = pid_controller();
+//     PState nextPlantState = sim::do_step_with(plant, stepper, x);
+//
+//     return {{}, {}};
+//   };
+//
+//   {
+//     constexpr double margin = 0.1;
+//     auto frpPositions =
+//         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
+//     auto realPositions = util::fmap(
+//         [](auto x) { return analyt::test_A(util::unchrono_sec(x.time - now)); },
+//         *plantRecord);
+//
+// #ifdef PLOT
+//
+//     const auto testData = util::fmap(
+//         [](const auto& x) {
+//           return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
+//         },
+//         *plantRecord);
+//
+//     plot_with_tube("Test A, (Kp, Ki, Kd) = (300, 0, 0).", testData,
+//                    &analyt::test_A, margin);
+//
+// #endif  // PLOT
+//
+//     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
+//   }
+// }
+
+// TEST_CASE(
+//     "Test B (Proportional-Derivative Control)—Reproduct known (analytical) "
+//     "result, borrowed from\n"
+//     "http://ctms.engin.umich.edu/CTMS/"
+//     "index.php?example=Introduction&section=ControlPID\n"
+//     "A damped-driven harmonic oscillator under the influence of a "
+//     "PD-controller, both with parameters defined in the test, should produce
+//     a " "step-response within a margin of the analytical solution.",
+//     "[Test 1], [P-controller]") {
+//   constexpr Real_t Kp = 300.;
+//   constexpr Real_t Ki = 0.;
+//   constexpr Real_t Kd = 10.;
+//
+//   // Setpoint to x = 1, for step response.
+//   const sodium::cell<PState> setPoint({1., 0., 0.});
+//   const sodium::stream_sink<SignalPt<PState>> sPlantState;
+//
+//   const CState u0 = {now - dts, 0., 0., 0.};
+//   auto cControl = ctrl::control_frp(
+//       pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
+//       static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
+//
+//   auto [sPlantState_unlisten, plantRecord] =
+//   util::make_listener(sPlantState);
+//   {
+//     PState x = {0., 0., 0.};
+//     sPlantState.send({now, x});
+//     for (int k = 1; k < simTime / dt; ++k) {
+//       x[2] = cControl.sample().ctrlVal;
+//       stepper.do_step(plant, x, 0, dt);
+//       sPlantState.send({now + k * dts, x});
+//     }
+//   }
+//   sPlantState_unlisten();
+//
+//   {
+//     constexpr double margin = 0.1;
+//     auto frpPositions =
+//         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
+//     auto realPositions = util::fmap(
+//         [](auto x) { return analyt::test_B(util::unchrono_sec(x.time - now));
+//         }, *plantRecord);
+//
+// #ifdef PLOT
+//     const auto testData = util::fmap(
+//         [](const auto& x) {
+//           return std::make_pair(util::unchrono_sec(x.time - now),
+//           x.value[0]);
+//         },
+//         *plantRecord);
+//
+//     plot_with_tube("Test B, (Kp, Ki, Kd) = (300, 0, 10).", testData,
+//                    &analyt::test_B, margin);
+// #endif  // PLOT
+//
+//     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
+//   }
+// }
+//
+// TEST_CASE(
+//     "Test C (Proportional-Integral Control)—Reproduct known (analytical) "
+//     "result, borrowed from\n"
+//     "http://ctms.engin.umich.edu/CTMS/"
+//     "index.php?example=Introduction&section=ControlPID\n"
+//     "A damped-driven harmonic oscillator under the influence of a "
+//     "PI-controller, both with parameters defined in the test, should produce
+//     a " "step-response within a margin of the analytical solution.",
+//     "[Test 1], [P-controller]") {
+//   constexpr Real_t Kp = 30.;
+//   constexpr Real_t Ki = 70.;
+//   constexpr Real_t Kd = 0.;
+//
+//   // Setpoint to x = 1, for step response.
+//   const sodium::cell<PState> setPoint({1., 0., 0.});
+//   const sodium::stream_sink<SignalPt<PState>> sPlantState;
+//
+//   const CState u0 = {now - dts, 0., 0., 0.};
+//   auto cControl = ctrl::control_frp(
+//       pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
+//       static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
+//
+//   auto [sPlantState_unlisten, plantRecord] =
+//   util::make_listener(sPlantState);
+//   {
+//     PState x = {0., 0., 0.};
+//     sPlantState.send({now, x});
+//     for (int k = 1; k < simTime / dt; ++k) {
+//       x[2] = cControl.sample().ctrlVal;
+//       stepper.do_step(plant, x, 0, dt);
+//       sPlantState.send({now + k * dts, x});
+//     }
+//   }
+//   sPlantState_unlisten();
+//
+//   {
+//     constexpr double margin = 0.1;
+//
+//     auto frpPositions =
+//         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
+//     auto realPositions = util::fmap(
+//         [](auto x) { return analyt::test_C(util::unchrono_sec(x.time - now));
+//         }, *plantRecord);
+//
+// #ifdef PLOT
+//     const auto testData = util::fmap(
+//         [](const auto& x) {
+//           return std::make_pair(util::unchrono_sec(x.time - now),
+//           x.value[0]);
+//         },
+//         *plantRecord);
+//
+//     plot_with_tube("Test C, (Kp, Ki, Kd) = (30, 70, 0).", testData,
+//                    &analyt::test_C, margin);
+// #endif  // PLOT
+//
+//     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
+//   }
+// }
+//
+// TEST_CASE(
+//     "Test D (Proportional-Integral-Derivative Control)—Reproduct known "
+//     "(analytical) result, borrowed from\n"
+//     "http://ctms.engin.umich.edu/CTMS/"
+//     "index.php?example=Introduction&section=ControlPID\n"
+//     "A damped-driven harmonic oscillator under the influence of a "
+//     "PID-controller, both with parameters defined in the test, should produce
+//     " "a step-response within a margin of the analytical solution.",
+//     "[Test D], [P-controller]") {
+//   constexpr Real_t Kp = 350.;
+//   constexpr Real_t Ki = 300.;
+//   constexpr Real_t Kd = 50.;
+//
+//   // Setpoint to x = 1, for step response.
+//   const sodium::cell<PState> setPoint({1., 0., 0.});
+//   const sodium::stream_sink<SignalPt<PState>> sPlantState;
+//
+//   const CState u0 = {now - dts, 0., 0., 0.};
+//   auto cControl = ctrl::control_frp(
+//       pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
+//       static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
+//
+//   auto [sPlantState_unlisten, plantRecord] =
+//   util::make_listener(sPlantState);
+//   {
+//     PState x = {0., 0., 0.};
+//     sPlantState.send({now, x});
+//     for (int k = 1; k < simTime / dt; ++k) {
+//       x[2] = cControl.sample().ctrlVal;
+//       stepper.do_step(plant, x, 0, dt);
+//       sPlantState.send({now + k * dts, x});
+//     }
+//   }
+//   sPlantState_unlisten();
+//
+//   {
+//     constexpr double margin = 0.2;
+//
+//     auto frpPositions =
+//         util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
+//     auto realPositions = util::fmap(
+//         [](auto x) { return analyt::test_D(util::unchrono_sec(x.time - now));
+//         }, *plantRecord);
+//
+// #ifdef PLOT
+//     const auto testData = util::fmap(
+//         [](const auto& x) {
+//           return std::make_pair(util::unchrono_sec(x.time - now),
+//           x.value[0]);
+//         },
+//         *plantRecord);
+//
+//     plot_with_tube("Test B, (Kp, Ki, Kd) = (350, 300, 50).", testData,
+//                    &analyt::test_D, margin);
+// #endif  // PLOT
+//
+//     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
+//   }
+// }

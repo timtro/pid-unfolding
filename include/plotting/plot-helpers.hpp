@@ -5,7 +5,7 @@
 #include <boost/format.hpp>
 
 #include "gnuplot-iostream.h"
-#include "util.hpp"
+#include "../util.hpp"
 
 template <typename Data, typename F>
 void plot_with_tube(std::string title, const Data &data, F ref_func,

@@ -14,10 +14,9 @@ namespace ctrl {
   }
 
   template <typename X, typename U, typename Alg, typename Fdiff>
-  [[nodiscard]] inline auto control_frp(Alg alg, Fdiff differencer,
-                                        const sodium::cell<X>& setPoint,
-                                        const sodium::stream<SignalPt<X>>& sPlantState,
-                                        U u0) {
+  [[nodiscard]] inline auto control_frp(
+      Alg alg, Fdiff differencer, const sodium::cell<X>& setPoint,
+      const sodium::stream<SignalPt<X>>& sPlantState, U u0) {
     const auto sError = sPlantState.snapshot(setPoint, differencer);
     const auto cControl = sError.template accum<U>(u0, alg);
 

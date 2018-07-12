@@ -3,24 +3,22 @@
 #include <iostream>
 
 #include <sodium/sodium.h>
-#include <boost/hana/functional/curry.hpp>
 #include <boost/numeric/odeint.hpp>
 #include <catch/catch.hpp>
 
-#include "../lib/Plant.hpp"
-#include "../lib/control-frp.hpp"
-#include "../lib/pid.hpp"
+#include "../include/Plant.hpp"
+#include "../include/control-frp.hpp"
+#include "../include/pid.hpp"
+#include "../include/util.hpp"
 
 #include "calculations/analytical_solutions.cpp"
-#include "util.hpp"
 
 #ifdef PLOT
-#include "gnuplot-iostream.h"
-#include "plot-helpers.hpp"
+#include "../include/plotting/gnuplot-iostream.h"
+#include "../include/plotting/plot-helpers.hpp"
 #endif  // PLOT
 
 namespace ode = boost::numeric::odeint;
-using boost::hana::curry;
 using Real_t = double;
 using CState = PIDState<Real_t>;
 
@@ -248,7 +246,6 @@ TEST_CASE(
       sPlantState.send({now + k * dts, x});
     }
   }
-
   sPlantState_unlisten();
 
   {
