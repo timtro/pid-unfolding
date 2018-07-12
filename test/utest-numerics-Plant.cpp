@@ -4,6 +4,7 @@
 #include <catch/catch.hpp>
 
 #include "../include/Plant.hpp"
+#include "../include/util/util-sim.hpp"
 
 using boost::hana::curry;
 using sim::PState;
@@ -24,7 +25,7 @@ TEST_CASE(
   // (†) v = (Fs / η)
 
   constexpr auto do_step =
-      curry<4>(sim::do_step_with<odeint::runge_kutta4<PState>>);
+      curry<4>(util::do_step_with<odeint::runge_kutta4<PState>>);
   constexpr double dt = 0.1;
   constexpr PState x0{0., 0., 0.};
 
@@ -39,7 +40,7 @@ TEST_CASE(
 
     const auto plant_step = do_step(plant, stepper, dt);
     PState atTerminalVel =
-        step_while(v_diff_not_within_tolerance, plant_step, x0);
+        util::step_while(v_diff_not_within_tolerance, plant_step, x0);
     REQUIRE(atTerminalVel[1] == Approx(4));
   }
 
@@ -49,7 +50,7 @@ TEST_CASE(
 
     const auto plant_step = do_step(plant, stepper, dt);
     PState atTerminalVel =
-        step_while(v_diff_not_within_tolerance, plant_step, x0);
+        util::step_while(v_diff_not_within_tolerance, plant_step, x0);
     REQUIRE(atTerminalVel[1] == Approx(9));
   }
 }

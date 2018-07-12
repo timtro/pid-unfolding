@@ -24,24 +24,6 @@ namespace sim {
     }
   };
 
-  template <typename Stepper>
-  auto do_step_with(Plant p, Stepper stepper, double dt, PState x0) -> PState {
-    stepper.do_step(p, x0, 0., dt);  // time doesn't matter.
-    return x0;
-  }
-
-  template <typename Predicate, typename F, typename A>
-  auto step_while(Predicate p, F f, A x0) -> decltype(f(x0)) {
-    A current = x0;
-    A last;
-    do {
-      last = current;
-      current = f(last);
-    } while (p(last, current));
-
-    return current;
-  }
-
   double lyapunov(const PState& s, const PState& setPoint = {0, 0, 0}) {
     const auto error = setPoint[0] - s[0];
     const auto lyapunovEnergy = error * error + s[1] * s[1];

@@ -6,6 +6,7 @@
 #include "../include/control-frp.hpp"
 #include "../include/pid.hpp"
 #include "../include/util/util.hpp"
+#include "../include/util/util-sim.hpp"
 
 #include "calculations/analytical_solutions.cpp"
 
@@ -16,7 +17,7 @@
 
 using namespace ranges;
 namespace ode = boost::numeric::odeint;
-using CState = PIDState<double>;
+using CState = PIDState<>;
 using PState = sim::PState;
 
 constexpr double dt = 0.01;  // seconds.
@@ -41,40 +42,40 @@ const std::vector<chrono::time_point<chrono::steady_clock>> ts =
     view::iota(1) | view::transform([](auto k) { return now + k * dts; })
     | view::take_while([](auto t) { return t > (now + 2s); });
 
-// TEST_CASE(
-//     "Test A (Proportional Control)—Reproduct known (analytical) result, "
-//     "borrowed from\n"
-//     "http://ctms.engin.umich.edu/CTMS/"
-//     "index.php?example=Introduction&section=ControlPID\n"
-//     "A damped-driven harmonic oscillator under the influence of a "
-//     "P-controller, both with parameters defined in the test, should produce
-//     a" "step-response within a margin of the analytical solution.",
-//     "[Test 1], [P-controller]") {
-//   constexpr double Kp = 300.;
-//   constexpr double Ki = 0.;
-//   constexpr double Kd = 0.;
-//
-//   const auto pid_controller = pid_algebra(Kp, Ki, Kd);
-//
-//   const CState u0 = {now - dts, 0., 0., 0.};
-//   const PState x0 = {0., 0., 0.};
-//
-//   const auto stepResponseCoalgebra = [&pid_controller](auto xu)
-//       -> std::optional<std::pair<std::pair<SignalPt<PState>, CState>,
-//                                  std::pair<SignalPt<PState>, CState>>> {
-//     const auto [tx, u] = xu;
-//
-//     const auto thisTime = tx.time;
-//     const auto x = tx.value;
-//     assert(thisTime == u.time);
-//     const auto nextTime = thisTime + dts;
-//
-//     CState nextControllerState = pid_controller();
-//     PState nextPlantState = sim::do_step_with(plant, stepper, x);
-//
-//     return {{}, {}};
-//   };
-//
+TEST_CASE(
+    "Test A (Proportional Control)—Reproduce analytical result, and cross ref "
+    "with plots from: \n"
+    "    http://ctms.engin.umich.edu/CTMS/"
+    "index.php?example=Introduction&section=ControlPID\n"
+    "A damped-driven harmonic oscillator controlled by the specified "
+    "P-controller, both with parameters defined in the test, should produce a "
+    "step-response within a margin of the analytical solution.",
+    "[Test 1], [P-controller]") {
+  constexpr double Kp = 300.;
+  constexpr double Ki = 0.;
+  constexpr double Kd = 0.;
+
+  const auto pid_controller = pid_algebra(Kp, Ki, Kd);
+
+  const CState u0 = {now - dts, 0., 0., 0.};
+  const PState x0 = {0., 0., 0.};
+
+  // const auto stepResponseCoalgebra = [](auto xu)
+  //     -> std::optional<std::pair<std::pair<SignalPt<PState>, CState>,
+  //                                std::pair<SignalPt<PState>, CState>>> {
+  //   const auto [tx, u] = xu;
+  //
+  //   const auto thisTime = tx.time;
+  //   const auto x = tx.value;
+  //   assert(thisTime == u.time);
+  //   const auto nextTime = thisTime + dts;
+  //
+  //   // CState nextControllerState = pid_controller();
+  //   PState nextPlantState = util::do_step_with(plant, stepper, x);
+  //
+  //   return {{}, {}};
+  // };
+
 //   {
 //     constexpr double margin = 0.1;
 //     auto frpPositions =
@@ -99,7 +100,7 @@ const std::vector<chrono::time_point<chrono::steady_clock>> ts =
 //
 //     REQUIRE(util::compareVectors(frpPositions, realPositions, margin));
 //   }
-// }
+}
 
 // TEST_CASE(
 //     "Test B (Proportional-Derivative Control)—Reproduct known (analytical) "
