@@ -12,18 +12,18 @@
 namespace chrono = std::chrono;
 using namespace std::chrono_literals;
 
-template <typename Real = double, typename Clock = chrono::steady_clock>
+template <typename Clock = chrono::steady_clock>
 struct PIDState {
   chrono::time_point<Clock> time;
-  Real errSum;
-  Real error;
-  Real ctrlVal;
+  double errSum;
+  double error;
+  double ctrlVal;
 };
 
-template <typename Real = double, typename Clock = chrono::steady_clock>
-auto pid_algebra(Real kp, Real ki, Real kd) {
-  return [kp, ki, kd](SignalPt<Real, Clock> errSigl,
-                      PIDState<Real, Clock> prev) -> PIDState<Real, Clock> {
+template <typename Clock = chrono::steady_clock>
+auto pid_algebra(double kp, double ki, double kd) {
+  return [kp, ki, kd](SignalPt<double, Clock> errSigl,
+                      PIDState<Clock> prev) -> PIDState<Clock> {
     const auto deltaT =
         chrono::duration_cast<chrono::nanoseconds>(errSigl.time - prev.time)
             .count();

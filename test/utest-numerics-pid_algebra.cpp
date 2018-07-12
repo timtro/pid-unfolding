@@ -5,9 +5,8 @@
 #include "../include/pid.hpp"
 #include "../include/util.hpp"
 
-using Real_t = double;
-using RealSignalVector = std::vector<SignalPt<Real_t>>;
-using CtrlState = PIDState<Real_t>;
+using RealSignalVector = std::vector<SignalPt<double>>;
+using CtrlState = PIDState<>;
 
 const auto now = chrono::steady_clock::now();
 
@@ -30,7 +29,7 @@ TEST_CASE(
     "A proportional ctrler with kp = 1, given a constant error signal with "
     "value 0 should produce a constant control signal of value 0 and "
     "accumulate no error.") {
-  const auto foldable_p00 = pid_algebra<double>(1., 0., 0.);
+  const auto foldable_p00 = pid_algebra(1., 0., 0.);
 
   RealSignalVector ones{{now + 1s, 0}, {now + 2s, 0}, {now + 3s, 0}};
 
@@ -52,7 +51,7 @@ TEST_CASE(
 TEST_CASE(
     "An integral controller with ki = 1, given a constant error signal of "
     "value 1, should accumulate error with a proportionally growing ctrlVal.") {
-  const auto foldable_0i0 = pid_algebra<double>(0., 1., 0.);
+  const auto foldable_0i0 = pid_algebra(0., 1., 0.);
 
   RealSignalVector ones{{now + 1s, 1}, {now + 2s, 1}, {now + 3s, 1}};
 
@@ -75,7 +74,7 @@ TEST_CASE(
     "A derivative controller with kd = 1, given a unit amplitude sawtooth "
     "should demonstrate the appropriate derivative/difference output. The "
     "error accumulation should also reflect the sawtooth signal.") {
-  const auto foldable_00d = pid_algebra<double>(0., 0., 1.);
+  const auto foldable_00d = pid_algebra(0., 0., 1.);
 
   RealSignalVector ones{{now + 1s, 0}, {now + 2s, 1}, {now + 3s, 0}};
 
