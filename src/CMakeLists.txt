@@ -11,7 +11,7 @@ set(testname pid-frp)
     endif()
     create_test(${testname})
 
-set(testname pid-range-v3)
+set(testname pid-unfold)
     add_executable (${testname} ${testname}.cpp)
     target_link_libraries (${testname} CATCH ${RANGE-V3_LIBRARIES} "-lsodium")
     if (WITH_PLOT)
