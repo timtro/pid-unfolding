@@ -17,7 +17,8 @@ namespace sim {
     Plant(double force, double damp, double spring)
         : staticForce(force), damping(damp), spring(spring) {}
 
-    void operator()(const PState& x, PState& dxdt, double /*time*/) const {
+    void operator()(const sim::PState& x, sim::PState& dxdt,
+                    double /*time*/) const {
       dxdt[0] = x[1];
       dxdt[1] = -spring * x[0] - damping * x[1] - x[2] + staticForce;
       dxdt[2] = 0.;  // Control variable dynamics are external to integration.
