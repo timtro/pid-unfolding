@@ -26,7 +26,8 @@ using PState = SignalPt<std::array<double, 2>>;  // AKA X
 //          │        ┌   ┐   │
 //        = │  · ,   │ · │   │
 //          │        │ · │   │
-//          └        └   ┘   ┘
+//          │        └   ┘   │
+//          └                ┘
 //            ^ Time   ^ [Position, Speed]
 //
 // On the other hand, sim::PState is just for Boost.odeint. It doesn't need
