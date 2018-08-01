@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -24,6 +26,31 @@ template <typename Clock = chrono::steady_clock>
 auto pid_algebra(double kp, double ki, double kd) {
   return [kp, ki, kd](SignalPt<double, Clock> errSigl,
                       PIDState<Clock> prev) -> PIDState<Clock> {
+    const auto deltaT =
+        chrono::duration_cast<chrono::nanoseconds>(errSigl.time - prev.time)
+            .count();
+    constexpr int nanosecondsPerSecond = 1E9;
+    const auto errSum =
+        prev.errSum + (errSigl.value * deltaT / nanosecondsPerSecond);
+    const auto dErr =
+        (errSigl.value - prev.error) * nanosecondsPerSecond / deltaT;
+    const auto ctrlVal = kp * errSigl.value + ki * errSum + kd * dErr;
+
+    return {errSigl.time, errSum, errSigl.value, ctrlVal};
+  };
+}
+
+template <typename Clock = chrono::steady_clock>
+auto pid_algebra_rev(double kp, double ki, double kd) {
+  return [kp, ki, kd](PIDState<Clock> prev,
+                      SignalPt<double, Clock> errSigl) -> PIDState<Clock> {
+    std::cout << "Called algebra with:\n"
+              << "   prev = PIDState{" << prev.time.time_since_epoch().count()
+              << ", " << prev.errSum << ", " << prev.ctrlVal << "}, and\n"
+              << "   errSigl = {"
+              << errSigl.time.time_since_epoch().count() << ", "
+              << errSigl.value << "}.\n";
+
     const auto deltaT =
         chrono::duration_cast<chrono::nanoseconds>(errSigl.time - prev.time)
             .count();

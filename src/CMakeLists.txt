@@ -19,3 +19,12 @@ set(testname pid-unfold)
       "-lboost_filesystem")
     endif()
     create_test(${testname})
+
+set(testname pid-RxCpp)
+    add_executable (${testname} ${testname}.cpp)
+    target_link_libraries (${testname} CATCH ${RANGE-V3_LIBRARIES} "-lsodium")
+    if (WITH_PLOT)
+    target_link_libraries (${testname} "-lboost_iostreams" "-lboost_system"
+      "-lboost_filesystem")
+    endif()
+    create_test(${testname})
