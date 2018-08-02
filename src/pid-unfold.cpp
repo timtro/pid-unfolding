@@ -76,7 +76,7 @@ const auto make_step_response_coalg = [](auto controller) {
         if (x.time > now + 2s) return {};
 
         const SignalPt<double> error = {x.time, x.value[0] - positionSetpoint};
-        CState uNew = controller(error, u);
+        CState uNew = controller(u, error);
         PState xNew = controlled_step(x, uNew);
 
         return {{{xNew, uNew}, {x, u}}};

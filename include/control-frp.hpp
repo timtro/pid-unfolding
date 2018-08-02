@@ -18,7 +18,10 @@ namespace ctrl {
       Alg alg, Fdiff differencer, const sodium::cell<X>& setPoint,
       const sodium::stream<SignalPt<X>>& sPlantState, U u0) {
     const auto sError = sPlantState.snapshot(setPoint, differencer);
-    const auto cControl = sError.template accum<U>(u0, alg);
+    const auto reverse_args = [](auto f) {
+      return [f](auto& a, auto& b) { return f(b, a); };
+    };
+    const auto cControl = sError.template accum<U>(u0, reverse_args(alg));
 
     return cControl;
   }

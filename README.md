@@ -8,7 +8,7 @@ The categorical dual of a functional *fold* is *unfold*. Since control and estim
 
 ***NB:*** I am extending this technique to control systems in general, and nonlinear model predictive control in particular. Check back soon for repositories exhibiting that research.
 
-(To download Dr. Beckman's papers, and see others in the series, [click here](http://vixra.org/author/brian_beckman).)
+(To download Dr. Beckman’s papers, and see others in the series, [click here](http://vixra.org/author/brian_beckman).)
 
 
 
@@ -27,7 +27,7 @@ In this code, a PID controller is implemented, and its step response is tested a
 
 Everything herein is written as unit-test (using [Catch2](https://github.com/catchorg/Catch2)). Actual unit tests are in `test/`, while the main event is in `/src`.
 
-The logic for the pid controller is in `include/pid.hpp`. The plant is in `include/Plant.hpp`.
+The logic for the PID controller is in `include/pid.hpp`. The plant is in `include/Plant.hpp`.
 
 The math to get the analytical results for use in the `src/` tests is in `src/calculations`. It will require Octave/MATLAB and wxMaxima to open.
 

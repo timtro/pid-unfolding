@@ -18,7 +18,7 @@ constexpr auto scanl =
   xs.reserve(data.size());
 
   for (const auto &datum : data) {
-    accumulator = f(datum, accumulator);
+    accumulator = f(accumulator, datum);
     xs.push_back(accumulator);
   };
 

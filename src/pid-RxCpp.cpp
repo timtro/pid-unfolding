@@ -20,8 +20,27 @@
 #endif  // PLOT
 
 namespace ode = boost::numeric::odeint;
-using CState = PIDState<>;
+using CState = PIDState<>;                       // AKA U
 using PState = SignalPt<std::array<double, 2>>;  // AKA X
+// NB:
+// PState = SignalPt<std::array<double, 2>>
+//          ┌                ┐
+//          │        ┌   ┐   │
+//        = │  · ,   │ · │   │
+//          │        │ · │   │
+//          │        └   ┘   │
+//          └                ┘
+//            ^ Time   ^ [Position, Speed]
+//
+// On the other hand, sim::PState is just for Boost.odeint. It doesn't need
+// time, but must be augmented with the control variable:
+//
+// sim::Pstate = std::array<double, 3>
+//                ┌   ┐
+//                │ · │  // Position
+//             =  │ · │  // Speed
+//                │ · │  // control variable for Boost.odeint.
+//                └   ┘
 
 constexpr double dt = 0.01;  // seconds.
 constexpr auto dts = util::double_to_duration(dt);
@@ -38,18 +57,21 @@ inline SignalPt<double> position_error(const std::tuple<PState, PState>& ab) {
   return {std::max(a.time, b.time), a.value[0] - b.value[0]};
 }
 
-struct Physigrator {
+struct WorldInterface {
   const rxcpp::subjects::behavior<PState> txSubject;
+  const rxcpp::observable<PState> setPoint =
+      // Setpoint to x = 1, for step response.
+      rxcpp::observable<>::just(PState{now, {1., 0.}});
 
-  Physigrator(PState x0) : txSubject(x0), _x(x0) {}
+  WorldInterface(PState x0) : txSubject(x0), _x(x0) {}
 
   void controlled_step(CState u) {
-    _x.time += dts;
     sim::PState xAugmented = {_x.value[0], _x.value[1], u.ctrlVal};
-    sim::PState xNew;
 
-    _stepper.do_step(_plant, xNew, 0, dt);
-    _x.value = {xNew[0], xNew[1]};
+    // do_step uses the second argument for both input and output.
+    _stepper.do_step(_plant, xAugmented, 0, dt);
+    _x.time += dts;
+    _x.value = {xAugmented[0], xAugmented[1]};
     txSubject.get_subscriber().on_next(_x);
   };
 
@@ -59,7 +81,7 @@ struct Physigrator {
  private:
   PState _x;
   ode::runge_kutta4<sim::PState> _stepper;
-  const sim::Plant _plant{staticForce, damp, spring};
+  const sim::Plant _plant = sim::Plant(staticForce, damp, spring);
 };
 
 TEST_CASE(
@@ -68,9 +90,7 @@ TEST_CASE(
     "src/calculations for details. Simulations performed using FRP.") {
   const CState u0 = {now - dts, 0., 0., 0.};
   const PState x0 = {now, {0., 0.}};
-  Physigrator plantSim(x0);
-  // Setpoint to x = 1, for step response.
-  const auto setPoint = rxcpp::observable<>::just(PState{now, {1., 0.}});
+  WorldInterface worldIface(x0);
 
   SECTION("Test A (Proportional Control) FRP.") {
     constexpr double Kp = 300.;
@@ -78,19 +98,37 @@ TEST_CASE(
     constexpr double Kd = 0.;
 
     std::vector<PState> plantStateRecord;
-    std::vector<CState> controllerStateRecord;
-
-    const auto sControl = plantSim.get_state_observable()
-                              .combine_latest(setPoint)
-                              .map(&position_error)
-                              .scan(u0, pid_algebra_rev(Kp, Ki, Kd));
-
-    sControl.subscribe([&](CState u) { controllerStateRecord.push_back(u); });
-    plantSim.get_state_observable().subscribe(
+    worldIface.get_state_observable().subscribe(
         [&](PState x) { plantStateRecord.push_back(x); });
 
-    while (plantSim.time_elapsed() < simDuration) {
-      plantSim.controlled_step(controllerStateRecord.back());
+    CState controllerState;
+
+    // A classical confiuration for a feedback controller is illustrated as:
+    //
+    //   setPoint ──➤ ⊕ ──➤ C ──➤ P ──┬──➤ plantState
+    //               -↑               │
+    //                │               │
+    //                ╰───────────────┘
+    // If you open the loop and place an interface to the imperative world, ◼,
+    // at the endpoints, the controller becomes:
+    //
+    //    ◼ ─➤ ⊕ ──➤ C ──➤ ◼
+    //        -↑
+    //         │
+    //         ◼
+    // which is in 1:1 correspondence with the code below (read backward from C)
+    //
+    const auto sControls =
+        worldIface.get_state_observable()          // worldIface == ◼.
+            .combine_latest(worldIface.setPoint)   // ┐ Combine state and setPt,
+            .map(&position_error)                  // ┘   and then ⊕.
+            .scan(u0, pid_algebra(Kp, Ki, Kd));//   This is C
+
+    sControls.subscribe([&controllerState](CState u) { controllerState = u; });
+
+    // Imperative loop where the FRx meets the real world.
+    while (worldIface.time_elapsed() < simDuration) {
+      worldIface.controlled_step(controllerState);
     }
 
     {
