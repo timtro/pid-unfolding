@@ -7,9 +7,7 @@
 #include <rxcpp/rx.hpp>
 
 #include "../include/Plant.hpp"
-#include "../include/control-frp.hpp"
 #include "../include/pid.hpp"
-#include "../include/util/util-frp.hpp"
 #include "../include/util/util.hpp"
 
 #include "calculations/analytical_solutions.cpp"
@@ -66,26 +64,26 @@ struct WorldInterface {
       // Setpoint to x = 1, for step response.
       rxcpp::observable<>::just(PState{now, {1., 0.}});
 
-  WorldInterface(PState x0) : txSubject(x0), _x(x0) {}
+  WorldInterface(PState x0) : txSubject(x0) {}
 
   void controlled_step(CState u) {
-    sim::PState xAugmented = {_x.value[0], _x.value[1], u.ctrlVal};
+    auto x = txSubject.get_value();
+    sim::PState xAugmented = {x.value[0], x.value[1], u.ctrlVal};
 
-    if ((_x.time - now) >= simDuration)
+    if ((x.time - now) >= simDuration)
       txSubject.get_subscriber().on_completed();
 
     // do_step uses the second argument for both input and output.
     _stepper.do_step(_plant, xAugmented, 0, dt);
-    _x.time += dts;
-    _x.value = {xAugmented[0], xAugmented[1]};
-    txSubject.get_subscriber().on_next(_x);
+    x.time += dts;
+    x.value = {xAugmented[0], xAugmented[1]};
+    txSubject.get_subscriber().on_next(x);
   };
 
   auto get_state_observable() { return txSubject.get_observable(); }
-  auto time_elapsed() { return _x.time - now; }
+  auto time_elapsed() { return txSubject.get_value().time - now; }
 
  private:
-  PState _x;
   ode::runge_kutta4<sim::PState> _stepper;
   const sim::Plant _plant = sim::Plant(staticForce, damp, spring);
 };
