@@ -7,6 +7,13 @@
 #include "gnuplot-iostream.h"
 #include "../util/util.hpp"
 
+
+#ifdef PLOT
+constexpr bool plot = true;
+#elif
+constexpr bool plot = false;
+#endif // PLOT
+
 template <typename Data, typename F>
 void plot_with_tube(std::string title, const Data &data, F ref_func,
                     double margin) {

@@ -134,15 +134,15 @@ void step_response_test(const std::string testTitle, const double Kp,
         [&](auto x) { return expected_fn(util::unchrono_sec(x.time - now)); },
         plantStateRecord);
 
-#ifdef PLOT
-    const auto testData = util::fmap(
-        [](const auto& x) {
-          return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
-        },
-        plantStateRecord);
+    if constexpr (plot) {
+      const auto testData = util::fmap(
+          [](const auto& x) {
+            return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
+          },
+          plantStateRecord);
 
-    plot_with_tube(testTitle, testData, expected_fn, margin);
-#endif  // PLOT
+      plot_with_tube(testTitle, testData, expected_fn, margin);
+    }
 
     REQUIRE(
         util::compareVectors(simulatedPositions, theoreticalPositions, margin));
