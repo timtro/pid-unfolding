@@ -19,6 +19,8 @@
 #include "../include/plotting/plot-helpers.hpp"
 #endif  // PLOT
 
+using namespace std::string_literals;
+
 namespace ode = boost::numeric::odeint;
 using CState = PIDState<>;                       // AKA U
 using PState = SignalPt<std::array<double, 2>>;  // AKA X
@@ -52,6 +54,7 @@ constexpr double spring = 20. / mass;
 constexpr double staticForce = 1. / mass;
 constexpr auto simDuration = 2s;  // seconds
 
+// position_error : (PState, PState) → SignalPt<double>
 inline SignalPt<double> position_error(const std::tuple<PState, PState>& ab) {
   auto& [a, b] = ab;
   return {std::max(a.time, b.time), a.value[0] - b.value[0]};
@@ -68,7 +71,7 @@ struct WorldInterface {
   void controlled_step(CState u) {
     sim::PState xAugmented = {_x.value[0], _x.value[1], u.ctrlVal};
 
-    if ( (_x.time - now) >= simDuration )
+    if ((_x.time - now) >= simDuration)
       txSubject.get_subscriber().on_completed();
 
     // do_step uses the second argument for both input and output.
@@ -87,236 +90,100 @@ struct WorldInterface {
   const sim::Plant _plant = sim::Plant(staticForce, damp, spring);
 };
 
-TEST_CASE(
-    "Given system and controller parameters, simulation should reproduce "
-    "analytically computed step responses to within a margin of error. See "
-    "src/calculations for details. Simulations performed using FRP.") {
+void step_response_test(const std::string testTitle, const double Kp,
+                        const double Ki, const double Kd,
+                        const std::function<double(double)> expected_fn,
+                        const double margin) {
   const CState u0 = {now - dts, 0., 0., 0.};
   const PState x0 = {now, {0., 0.}};
   WorldInterface worldIface(x0);
 
-  SECTION("Test A (Proportional Control) FRP.") {
+  std::vector<PState> plantStateRecord;
+  worldIface.get_state_observable().subscribe(
+      [&](PState x) { plantStateRecord.push_back(x); });
+
+  // A classical confiuration for a feedback controller is illustrated as:
+  //                  err   u
+  //   setPoint ──➤ ⊕ ──➤ C ──➤ P ──┬──➤ plantState
+  //               -↑               │
+  //                │               │
+  //                ╰───────────────┘
+  // If you open the loop and place an interface to the imperative world, ◼,
+  // at the endpoints, the controller becomes:
+  //
+  // setPoint  err   u
+  //    ◼ ─➤ ⊕ ──➤ C ──➤ ◼
+  //        -↑
+  //         │ plantState
+  //         ◼
+  // which is in 1:1 correspondence with the code below (read backward from C)
+  //
+  const auto sControls =
+      worldIface
+          .get_state_observable()               // worldIface == ◼.
+          .combine_latest(worldIface.setPoint)  // ┐ Combine state and setPt,
+          .map(&position_error)                 // ┘   and then ⊕.
+          .observe_on(rxcpp::identity_current_thread())
+          .scan(u0, pid_algebra(Kp, Ki, Kd));  //   This is C
+
+  sControls.subscribe(
+      [&worldIface](CState u) { worldIface.controlled_step(u); });
+
+  {
+    auto simulatedPositions =
+        util::fmap([](auto x) { return x.value[0]; }, plantStateRecord);
+    auto theoreticalPositions = util::fmap(
+        [&](auto x) { return expected_fn(util::unchrono_sec(x.time - now)); },
+        plantStateRecord);
+
+#ifdef PLOT
+    const auto testData = util::fmap(
+        [](const auto& x) {
+          return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
+        },
+        plantStateRecord);
+
+    plot_with_tube(testTitle, testData, expected_fn, margin);
+#endif  // PLOT
+
+    REQUIRE(
+        util::compareVectors(simulatedPositions, theoreticalPositions, margin));
+  }
+}
+
+TEST_CASE(
+    "Given system and controller parameters, simulation should reproduce "
+    "analytically computed step responses to within a margin of error. See "
+    "src/calculations for details. Simulations performed using FRx.") {
+  SECTION("Test A (Proportional Control) FRx.") {
     constexpr double Kp = 300.;
     constexpr double Ki = 0.;
     constexpr double Kd = 0.;
-
-    std::vector<PState> plantStateRecord;
-
-    // A classical confiuration for a feedback controller is illustrated as:
-    //
-    //   setPoint ──➤ ⊕ ──➤ C ──➤ P ──┬──➤ plantState
-    //               -↑               │
-    //                │               │
-    //                ╰───────────────┘
-    // If you open the loop and place an interface to the imperative world, ◼,
-    // at the endpoints, the controller becomes:
-    //
-    //    ◼ ─➤ ⊕ ──➤ C ──➤ ◼
-    //        -↑
-    //         │
-    //         ◼
-    // which is in 1:1 correspondence with the code below (read backward from C)
-    //
-    const auto sControls =
-        worldIface.get_state_observable()          // worldIface == ◼.
-            .observe_on(rxcpp::identity_current_thread())
-            .combine_latest(worldIface.setPoint)   // ┐ Combine state and setPt,
-            .map(&position_error)                  // ┘   and then ⊕.
-            .scan(u0, pid_algebra(Kp, Ki, Kd));    //   This is C
-
-    worldIface.get_state_observable().subscribe(
-        [&](PState x) { plantStateRecord.push_back(x); });
-
-    sControls.subscribe([&worldIface](CState u){worldIface.controlled_step(u);});
-
-    {
-      constexpr double margin = 0.1;
-      auto simulatedPositions =
-          util::fmap([](auto x) { return x.value[0]; }, plantStateRecord);
-      auto theoreticalPositions = util::fmap(
-          [](auto x) {
-            return analyt::test_A(util::unchrono_sec(x.time - now));
-          },
-          plantStateRecord);
-
-#ifdef PLOT
-      const auto testData = util::fmap(
-          [](const auto& x) {
-            return std::make_pair(util::unchrono_sec(x.time - now), x.value[0]);
-          },
-          plantStateRecord);
-
-      plot_with_tube("Test A, (Kp, Ki, Kd) = (300, 0, 0).", testData,
-                     &analyt::test_A, margin);
-#endif  // PLOT
-
-      REQUIRE(util::compareVectors(simulatedPositions, theoreticalPositions,
-                                   margin));
-    }
+    const auto title = "Test A; (Kp, Ki, Kd) = (300., 0., 0.); FRx"s;
+    step_response_test(title, Kp, Ki, Kd, &analyt::test_A, 0.1);
   }
 
-  //   SECTION("Test B (Proportional-Derivative Control) anamorphism.") {
-  //     constexpr double Kp = 300.;
-  //     constexpr double Ki = 0.;
-  //     constexpr double Kd = 10.;
-  //
-  //     const sodium::stream_sink<SignalPt<PState>> sPlantState;
-  //
-  //     auto cControl = ctrl::control_frp(
-  //         pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
-  //         static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
-  //
-  //     auto [sPlantState_unlisten, plantRecord] =
-  //     util::make_listener(sPlantState);
-  //     {
-  //       PState x = {0., 0., 0.};
-  //       sPlantState.send({now, x});
-  //       for (int k = 1; k < simDuration / dt; ++k) {
-  //         x[2] = cControl.sample().ctrlVal;
-  //         stepper.do_step(plant, x, 0, dt);
-  //         sPlantState.send({now + k * dts, x});
-  //       }
-  //     }
-  //     sPlantState_unlisten();
-  //
-  //     {
-  //       constexpr double margin = 0.1;
-  //       auto simulatedPositions =
-  //           util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
-  //       auto theoreticalPositions = util::fmap(
-  //           [](auto x) {
-  //             return analyt::test_B(util::unchrono_sec(x.time - now));
-  //           },
-  //           *plantRecord);
-  //
-  // #ifdef PLOT
-  //       const auto testData = util::fmap(
-  //           [](const auto& x) {
-  //             return std::make_pair(util::unchrono_sec(x.time - now),
-  //             x.value[0]);
-  //           },
-  //           *plantRecord);
-  //
-  //       plot_with_tube("Test B, (Kp, Ki, Kd) = (300, 0, 10).", testData,
-  //                      &analyt::test_B, margin);
-  // #endif  // PLOT
-  //
-  //       REQUIRE(util::compareVectors(simulatedPositions,
-  //       theoreticalPositions,
-  //                                    margin));
-  //     }
-  //   }
-  //
-  //   SECTION("Test C (Proportional-Integral Control) anamorphism.") {
-  //     constexpr double Kp = 30.;
-  //     constexpr double Ki = 70.;
-  //     constexpr double Kd = 0.;
-  //
-  //     // Setpoint to x = 1, for step response.
-  //     const sodium::cell<PState> setPoint({1., 0., 0.});
-  //     const sodium::stream_sink<SignalPt<PState>> sPlantState;
-  //
-  //     const CState u0 = {now - dts, 0., 0., 0.};
-  //     auto cControl = ctrl::control_frp(
-  //         pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
-  //         static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
-  //
-  //     auto [sPlantState_unlisten, plantRecord] =
-  //     util::make_listener(sPlantState);
-  //     {
-  //       PState x = {0., 0., 0.};
-  //       sPlantState.send({now, x});
-  //       for (int k = 1; k < simDuration / dt; ++k) {
-  //         x[2] = cControl.sample().ctrlVal;
-  //         stepper.do_step(plant, x, 0, dt);
-  //         sPlantState.send({now + k * dts, x});
-  //       }
-  //     }
-  //     sPlantState_unlisten();
-  //
-  //     {
-  //       constexpr double margin = 0.1;
-  //
-  //       auto simulatedPositions =
-  //           util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
-  //       auto theoreticalPositions = util::fmap(
-  //           [](auto x) {
-  //             return analyt::test_C(util::unchrono_sec(x.time - now));
-  //           },
-  //           *plantRecord);
-  //
-  // #ifdef PLOT
-  //       const auto testData = util::fmap(
-  //           [](const auto& x) {
-  //             return std::make_pair(util::unchrono_sec(x.time - now),
-  //             x.value[0]);
-  //           },
-  //           *plantRecord);
-  //
-  //       plot_with_tube("Test C, (Kp, Ki, Kd) = (30, 70, 0).", testData,
-  //                      &analyt::test_C, margin);
-  // #endif  // PLOT
-  //
-  //       REQUIRE(util::compareVectors(simulatedPositions,
-  //       theoreticalPositions,
-  //                                    margin));
-  //     }
-  //   }
-  //
-  //   SECTION("Test D (Proportional-Integral-Derivative Control) anamorphism.")
-  //   {
-  //     constexpr double Kp = 350.;
-  //     constexpr double Ki = 300.;
-  //     constexpr double Kd = 50.;
-  //
-  //     // Setpoint to x = 1, for step response.
-  //     const sodium::cell<PState> setPoint({1., 0., 0.});
-  //     const sodium::stream_sink<SignalPt<PState>> sPlantState;
-  //
-  //     const CState u0 = {now - dts, 0., 0., 0.};
-  //     auto cControl = ctrl::control_frp(
-  //         pid_algebra(Kp, Ki, Kd), &to_error, setPoint,
-  //         static_cast<sodium::stream<SignalPt<PState>>>(sPlantState), u0);
-  //
-  //     auto [sPlantState_unlisten, plantRecord] =
-  //     util::make_listener(sPlantState);
-  //     {
-  //       PState x = {0., 0., 0.};
-  //       sPlantState.send({now, x});
-  //       for (int k = 1; k < simDuration / dt; ++k) {
-  //         x[2] = cControl.sample().ctrlVal;
-  //         stepper.do_step(plant, x, 0, dt);
-  //         sPlantState.send({now + k * dts, x});
-  //       }
-  //     }
-  //     sPlantState_unlisten();
-  //
-  //     {
-  //       constexpr double margin = 0.2;
-  //
-  //       auto simulatedPositions =
-  //           util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
-  //       auto theoreticalPositions = util::fmap(
-  //           [](auto x) {
-  //             return analyt::test_D(util::unchrono_sec(x.time - now));
-  //           },
-  //           *plantRecord);
-  //
-  // #ifdef PLOT
-  //       const auto testData = util::fmap(
-  //           [](const auto& x) {
-  //             return std::make_pair(util::unchrono_sec(x.time - now),
-  //             x.value[0]);
-  //           },
-  //           *plantRecord);
-  //
-  //       plot_with_tube("Test B, (Kp, Ki, Kd) = (350, 300, 50).", testData,
-  //                      &analyt::test_D, margin);
-  // #endif  // PLOT
-  //
-  //       REQUIRE(util::compareVectors(simulatedPositions,
-  //       theoreticalPositions,
-  //                                    margin));
-  //     }
-  //   }
+  SECTION("Test B (Proportional-Derivative Control) FRx.") {
+    constexpr double Kp = 300.;
+    constexpr double Ki = 0.;
+    constexpr double Kd = 10.;
+    const auto title = "Test B; (Kp, Ki, Kd) = (300., 0., 10.); FRx"s;
+    step_response_test(title, Kp, Ki, Kd, &analyt::test_B, 0.1);
+  }
+
+  SECTION("Test C (Proportional-Integral Control) FRx.") {
+    constexpr double Kp = 30.;
+    constexpr double Ki = 70.;
+    constexpr double Kd = 0.;
+    const auto title = "Test C; (Kp, Ki, Kd) = (30., 70., 0.); FRx"s;
+    step_response_test(title, Kp, Ki, Kd, &analyt::test_C, 0.1);
+  }
+
+  SECTION("Test D (Proportional-Integral-Derivative Control) FRx.") {
+    constexpr double Kp = 350.;
+    constexpr double Ki = 300.;
+    constexpr double Kd = 50.;
+    const auto title = "Test D; (Kp, Ki, Kd) = (350., 300., 50.); FRx"s;
+    step_response_test(title, Kp, Ki, Kd, &analyt::test_D, 0.2);
+  }
 }
