@@ -68,6 +68,9 @@ struct WorldInterface {
   void controlled_step(CState u) {
     sim::PState xAugmented = {_x.value[0], _x.value[1], u.ctrlVal};
 
+    if ( (_x.time - now) >= simDuration )
+      txSubject.get_subscriber().on_completed();
+
     // do_step uses the second argument for both input and output.
     _stepper.do_step(_plant, xAugmented, 0, dt);
     _x.time += dts;
@@ -98,10 +101,6 @@ TEST_CASE(
     constexpr double Kd = 0.;
 
     std::vector<PState> plantStateRecord;
-    worldIface.get_state_observable().subscribe(
-        [&](PState x) { plantStateRecord.push_back(x); });
-
-    CState controllerState;
 
     // A classical confiuration for a feedback controller is illustrated as:
     //
@@ -120,16 +119,15 @@ TEST_CASE(
     //
     const auto sControls =
         worldIface.get_state_observable()          // worldIface == ◼.
+            .observe_on(rxcpp::identity_current_thread())
             .combine_latest(worldIface.setPoint)   // ┐ Combine state and setPt,
             .map(&position_error)                  // ┘   and then ⊕.
-            .scan(u0, pid_algebra(Kp, Ki, Kd));//   This is C
+            .scan(u0, pid_algebra(Kp, Ki, Kd));    //   This is C
 
-    sControls.subscribe([&controllerState](CState u) { controllerState = u; });
+    worldIface.get_state_observable().subscribe(
+        [&](PState x) { plantStateRecord.push_back(x); });
 
-    // Imperative loop where the FRx meets the real world.
-    while (worldIface.time_elapsed() < simDuration) {
-      worldIface.controlled_step(controllerState);
-    }
+    sControls.subscribe([&worldIface](CState u){worldIface.controlled_step(u);});
 
     {
       constexpr double margin = 0.1;
