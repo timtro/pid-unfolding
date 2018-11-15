@@ -37,14 +37,14 @@ namespace util {
 
     auto resultAB = f(a0);
     if (resultAB)
-      bs.push_back(resultAB->second);
+      bs.push_back(resultAB->first);
     else
       return bs;
 
     while (1) {
-      resultAB = f(resultAB->first);
+      resultAB = f(resultAB->second);
       if (resultAB)
-        bs.push_back(resultAB->second);
+        bs.push_back(resultAB->first);
       else
         return bs;
     }

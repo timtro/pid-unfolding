@@ -79,7 +79,7 @@ const auto make_step_response_coalg = [](auto controller) {
         CState uNew = controller(u, error);
         PState xNew = controlled_step(x, uNew);
 
-        return {{{xNew, uNew}, {x, u}}};
+        return {{{x, u}, {xNew, uNew}}};
       };
 };
 

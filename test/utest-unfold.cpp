@@ -29,7 +29,7 @@ TEST_CASE(
     if (current < 0)
       return {};
     else
-      return {{oneSmaller, current}};
+      return {{current, oneSmaller}};
   };
 
   REQUIRE(util::unfold(coalg, 10)
