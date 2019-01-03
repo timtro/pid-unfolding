@@ -24,12 +24,11 @@ TEST_CASE(
 TEST_CASE(
     "Anamorphic unfold should count down from seed to zero (inclusive) given "
     "this coalgebra") {
-  auto coalg = [](int current) -> std::optional<std::pair<int, int>> {
-    auto oneSmaller = current - 1;
-    if (current < 0)
+  const auto coalg = [](int z) constexpr -> std::optional<std::pair<int, int>> {
+    if (z < 0)
       return {};
     else
-      return {{current, oneSmaller}};
+      return {{z, z - 1}};
   };
 
   REQUIRE(util::unfold(coalg, 10)

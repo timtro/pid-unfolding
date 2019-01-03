@@ -42,7 +42,7 @@ namespace util {
       return bs;
 
     while (1) {
-      resultAB = f(resultAB->second);
+      resultAB = f(std::move(resultAB->second));
       if (resultAB)
         bs.push_back(resultAB->first);
       else
