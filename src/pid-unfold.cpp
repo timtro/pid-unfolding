@@ -40,7 +40,7 @@ using PState = SignalPt<std::array<double, 2>>;  // AKA X
 //                │ · │  // control variable for Boost.odeint.
 //                └   ┘
 
-constexpr double dt = 0.01;  // seconds.
+constexpr double dt = 0.001;  // seconds.
 constexpr auto dts = util::double_to_duration(dt);
 const auto now = chrono::steady_clock::now();
 
@@ -52,7 +52,7 @@ constexpr double simTime = 2;  // seconds
 const sim::Plant plant(staticForce, damp, spring);
 ode::runge_kutta4<sim::PState> stepper;
 
-const CState u0 = {now - dts, 0., 0., 0.};
+const CState u0 = {now, 0., 0., 0.};
 const PState x0 = {now, {0., 0.}};
 
 // controlled_step : (X, U) → X  = (PState, CState) → PState
@@ -99,7 +99,7 @@ TEST_CASE(
     auto result = util::unfold(step_response_coalg, std::pair{x0, u0});
 
     {
-      constexpr double margin = 0.1;
+      constexpr double margin = 0.03;
       auto simulatedPositions =
           util::fmap([](auto xu) { return xu.first.value[0]; }, result);
       auto theoreticalPositions = util::fmap(
@@ -139,7 +139,7 @@ TEST_CASE(
     auto result = util::unfold(step_response_coalg, std::pair{x0, u0});
 
     {
-      constexpr double margin = 0.1;
+      constexpr double margin = 0.03;
       auto simulatedPositions =
           util::fmap([](auto xu) { return xu.first.value[0]; }, result);
       auto theoreticalPositions = util::fmap(
@@ -179,7 +179,7 @@ TEST_CASE(
     auto result = util::unfold(step_response_coalg, std::pair{x0, u0});
 
     {
-      constexpr double margin = 0.1;
+      constexpr double margin = 0.03;
       auto simulatedPositions =
           util::fmap([](auto xu) { return xu.first.value[0]; }, result);
       auto theoreticalPositions = util::fmap(
@@ -219,7 +219,7 @@ TEST_CASE(
     auto result = util::unfold(step_response_coalg, std::pair{x0, u0});
 
     {
-      constexpr double margin = 0.2;
+      constexpr double margin = 0.07;
       auto simulatedPositions =
           util::fmap([](auto xu) { return xu.first.value[0]; }, result);
       auto theoreticalPositions = util::fmap(

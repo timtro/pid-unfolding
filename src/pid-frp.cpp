@@ -23,7 +23,7 @@ namespace ode = boost::numeric::odeint;
 using CState = PIDState<>;
 using sim::PState;
 
-constexpr double dt = 0.01;  // seconds.
+constexpr double dt = 0.001;  // seconds.
 constexpr auto dts = util::double_to_duration(dt);
 const auto now = chrono::steady_clock::now();
 
@@ -44,7 +44,7 @@ TEST_CASE(
     "Given system and controller parameters, simulation should reproduce "
     "analytically computed step responses to within a margin of error. See "
     "src/calculations for details. Simulations performed using FRP.") {
-  const CState u0 = {now - dts, 0., 0., 0.};
+  const CState u0 = {now, 0., 0., 0.};
   // Setpoint to x = 1, for step response.
   const sodium::cell<PState> setPoint({1., 0., 0.});
 
@@ -72,7 +72,7 @@ TEST_CASE(
     sPlantState_unlisten();
 
     {
-      constexpr double margin = 0.1;
+      constexpr double margin = 0.03;
       auto simulatedPositions =
           util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
       auto theoreticalPositions = util::fmap(
@@ -123,7 +123,7 @@ TEST_CASE(
     sPlantState_unlisten();
 
     {
-      constexpr double margin = 0.1;
+      constexpr double margin = 0.03;
       auto simulatedPositions =
           util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
       auto theoreticalPositions = util::fmap(
@@ -175,7 +175,7 @@ TEST_CASE(
     sPlantState_unlisten();
 
     {
-      constexpr double margin = 0.1;
+      constexpr double margin = 0.03;
 
       auto simulatedPositions =
           util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
@@ -228,7 +228,7 @@ TEST_CASE(
     sPlantState_unlisten();
 
     {
-      constexpr double margin = 0.2;
+      constexpr double margin = 0.07;
 
       auto simulatedPositions =
           util::fmap([](auto x) { return x.value[0]; }, *plantRecord);
