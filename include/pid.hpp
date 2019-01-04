@@ -29,6 +29,8 @@ auto pid_algebra(double kp, double ki, double kd) {
     const auto deltaT =
         chrono::duration_cast<chrono::nanoseconds>(errSigl.time - prev.time)
             .count();
+    if (deltaT <= 0)
+      return prev;
     constexpr int nanosecondsPerSecond = 1E9;
     const auto errSum =
         prev.errSum + (errSigl.value * deltaT / nanosecondsPerSecond);

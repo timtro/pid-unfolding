@@ -2,33 +2,27 @@
 
 #include <cmath>
 
+using std::sqrt;
+using std::sin;
+using std::cos;
+using std::exp;
+
 namespace analyt {
 
   double test_A(double t) {
-    return std::exp(-5. * t)
-               * (-(150. * std::sin(std::sqrt(285.) * t))
-                      / (31. * std::sqrt(285.))
-                  - (30. * std::cos(std::sqrt(285.) * t)) / 31.)
-           + 30. / 31.;
+    return -0.27291*exp(-5*t)*sin(17.175*t)-0.9375*exp(-5*t)*cos(17.175*t)+0.9375;
   }
 
   double test_B(double t) {
-    return 0.10118 * std::exp(-11.145 * t) * std::sin(15.511 * t)
-           - 1.0944 * std::exp(-11.145 * t) * std::cos(15.511 * t)
-           + 0.15697 * std::exp(-87.708 * t) + 0.93749;
+    return 0.042137*exp(-10*t)*sin(14.832*t)-0.9375*exp(-10*t)*cos(14.832*t)+0.9375;
   }
 
   double test_C(double t) {
-    return -0.86502 * std::exp(-3.9537 * t) * std::sin(4.2215 * t)
-           - 0.83773 * std::exp(-3.9537 * t) * std::cos(4.2215 * t)
-           - 0.16226 * std::exp(-2.0924 * t) + 0.99999;
+    return -0.86502*exp(-3.9537*t)*sin(4.2215*t)-0.83773*exp(-3.9537*t)*cos(4.2215*t)-0.16226*exp(-2.0924*t)+0.99999;
   }
 
   double test_D(double t) {
-    return -0.88562 * std::exp(-51.774 * t) * std::sin(54.918 * t)
-           - 0.93656 * std::exp(-51.774 * t) * std::cos(54.918 * t)
-           - 0.044211 * std::exp(-0.95866 * t)
-           - 0.019219 * std::exp(-5.4933 * t) + 0.99999;
+    return -0.043992*exp(-0.95693*t)-0.017952*exp(-5.899*t)-0.93805*exp(-53.144*t)+1.0;
   }
 
 }  // namespace analyt

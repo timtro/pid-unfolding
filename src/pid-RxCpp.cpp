@@ -42,7 +42,7 @@ using PState = SignalPt<std::array<double, 2>>;  // AKA X
 //                │ · │  // control variable for Boost.odeint.
 //                └   ┘
 
-constexpr double dt = 0.01;  // seconds.
+constexpr double dt = 0.001;  // seconds.
 constexpr auto dts = util::double_to_duration(dt);
 const auto now = chrono::steady_clock::now();
 
@@ -92,7 +92,7 @@ void step_response_test(const std::string testTitle, const double Kp,
                         const double Ki, const double Kd,
                         const std::function<double(double)> expected_fn,
                         const double margin) {
-  const CState u0 = {now - dts, 0., 0., 0.};
+  const CState u0 = {now, 0., 0., 0.};
   const PState x0 = {now, {0., 0.}};
   WorldInterface worldIface(x0);
 
@@ -158,7 +158,7 @@ TEST_CASE(
     constexpr double Ki = 0.;
     constexpr double Kd = 0.;
     const auto title = "Test A; (Kp, Ki, Kd) = (300., 0., 0.); FRx"s;
-    step_response_test(title, Kp, Ki, Kd, &analyt::test_A, 0.1);
+    step_response_test(title, Kp, Ki, Kd, &analyt::test_A, 0.05);
   }
 
   SECTION("Test B (Proportional-Derivative Control) FRx.") {
@@ -166,7 +166,7 @@ TEST_CASE(
     constexpr double Ki = 0.;
     constexpr double Kd = 10.;
     const auto title = "Test B; (Kp, Ki, Kd) = (300., 0., 10.); FRx"s;
-    step_response_test(title, Kp, Ki, Kd, &analyt::test_B, 0.1);
+    step_response_test(title, Kp, Ki, Kd, &analyt::test_B, 0.05);
   }
 
   SECTION("Test C (Proportional-Integral Control) FRx.") {
@@ -174,7 +174,7 @@ TEST_CASE(
     constexpr double Ki = 70.;
     constexpr double Kd = 0.;
     const auto title = "Test C; (Kp, Ki, Kd) = (30., 70., 0.); FRx"s;
-    step_response_test(title, Kp, Ki, Kd, &analyt::test_C, 0.1);
+    step_response_test(title, Kp, Ki, Kd, &analyt::test_C, 0.05);
   }
 
   SECTION("Test D (Proportional-Integral-Derivative Control) FRx.") {
@@ -182,6 +182,6 @@ TEST_CASE(
     constexpr double Ki = 300.;
     constexpr double Kd = 50.;
     const auto title = "Test D; (Kp, Ki, Kd) = (350., 300., 50.); FRx"s;
-    step_response_test(title, Kp, Ki, Kd, &analyt::test_D, 0.2);
+    step_response_test(title, Kp, Ki, Kd, &analyt::test_D, 0.07);
   }
 }
