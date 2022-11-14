@@ -1,18 +1,10 @@
 #pragma once
 
+#include <boost/format.hpp>
 #include <string>
 
-#include <boost/format.hpp>
-
-#include "gnuplot-iostream.h"
 #include "../util/util.hpp"
-
-
-#ifdef PLOT
-constexpr bool plot = true;
-#elif
-constexpr bool plot = false;
-#endif // PLOT
+#include "gnuplot-iostream.h"
 
 template <typename Data, typename F>
 void plot_with_tube(std::string title, const Data &data, F ref_func,

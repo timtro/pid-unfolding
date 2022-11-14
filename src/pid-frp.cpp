@@ -1,22 +1,23 @@
+#include <sodium/sodium.h>
+
+#include <boost/numeric/odeint.hpp>
+#include <catch2/catch.hpp>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-
-#include <sodium/sodium.h>
-#include <boost/numeric/odeint.hpp>
-#include <catch/catch.hpp>
 
 #include "../include/Plant.hpp"
 #include "../include/control-frp.hpp"
 #include "../include/pid.hpp"
 #include "../include/util/util-frp.hpp"
 #include "../include/util/util.hpp"
-
 #include "calculations/analytical_solutions.cpp"
 
 #ifdef PLOT
-#include "../include/plotting/gnuplot-iostream.h"
+constexpr bool plot = true;
 #include "../include/plotting/plot-helpers.hpp"
+#else
+constexpr bool plot = false;
 #endif  // PLOT
 
 namespace ode = boost::numeric::odeint;

@@ -1,20 +1,20 @@
+#include <boost/numeric/odeint.hpp>
+#include <catch2/catch.hpp>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-
-#include <boost/numeric/odeint.hpp>
-#include <catch/catch.hpp>
 #include <rxcpp/rx.hpp>
 
 #include "../include/Plant.hpp"
 #include "../include/pid.hpp"
 #include "../include/util/util.hpp"
-
 #include "calculations/analytical_solutions.cpp"
 
 #ifdef PLOT
-#include "../include/plotting/gnuplot-iostream.h"
+constexpr bool plot = true;
 #include "../include/plotting/plot-helpers.hpp"
+#else
+constexpr bool plot = false;
 #endif  // PLOT
 
 using namespace std::string_literals;
