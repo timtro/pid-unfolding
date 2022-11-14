@@ -1,13 +1,12 @@
 #pragma once
 
-#include <iostream>
-
+#include <boost/hana.hpp>
 #include <chrono>
+#include <cmath>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <optional>
-
-#include <boost/hana.hpp>
 
 #include "SignalPt.hpp"
 
