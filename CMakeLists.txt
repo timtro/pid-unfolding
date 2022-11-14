@@ -3,12 +3,10 @@ cmake_minimum_required (VERSION 2.8)
 project(pid-folding)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_COMPILER /usr/bin/clang++-7)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-set (CMAKE_CXX_STANDARD 17)
-set(common "-fno-omit-frame-pointer -pg")
+set(common "-fno-omit-frame-pointer -pg -std=c++17")
 set(profiling "-fno-omit-frame-pointer -pg")
 set(warnings "-Wall -Wextra -Werror -pedantic")
 set(optimizations_debug "-O2")
@@ -19,7 +17,7 @@ set(perf_bench "-fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} ${common} ${debug} ${warnings} ${optimizations_debug}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} ${common} ${optimizations_release}")
 
-option(WITH_PLOT "Use GNUPLOT to visualize results" OFF)
+option(WITH_PLOT "Use GNUPLOT to visualize results" ON)
 
 if(WITH_PLOT)
   add_definitions(-DPLOT=1)
