@@ -4,8 +4,6 @@
 
 #include <sodium/sodium.h>
 
-namespace chrono = std::chrono;
-
 namespace util {
 
   template <typename T>
