@@ -16,7 +16,7 @@ namespace util {
 
   template <typename T, typename A, typename F>
   auto fmap(F f, const std::vector<T, A> &v) {
-    using MapedToType = std::invoke_result_t<F, decltype(v.at(0))>;
+    using MapedToType = std::invoke_result_t<F, decltype(v[0])>;
     std::vector<MapedToType> result;
     result.reserve(v.size());
 
