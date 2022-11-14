@@ -26,10 +26,9 @@ template <typename Clock = chrono::steady_clock>
 auto pid_algebra(double kp, double ki, double kd) {
   return [kp, ki, kd](PIDState<Clock> prev,
                       SignalPt<double, Clock> errSigl) -> PIDState<Clock> {
-    const chrono::duration<double> deltaT =
-        errSigl.time - prev.time;
+    const chrono::duration<double> deltaT = errSigl.time - prev.time;
     if (deltaT <= chrono::seconds{0}) return prev;
-    const auto errSum = prev.errSum + (errSigl.value * deltaT.count());
+    const auto errSum = std::fma(errSigl.value, deltaT.count(), prev.errSum);
     const auto dErr = (errSigl.value - prev.error) / deltaT.count();
     const auto ctrlVal = kp * errSigl.value + ki * errSum + kd * dErr;
 
