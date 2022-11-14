@@ -1,6 +1,5 @@
+#include <catch2/catch.hpp>
 #include <iostream>
-
-#include <catch/catch.hpp>
 
 #include "../include/pid.hpp"
 #include "../include/util/util.hpp"

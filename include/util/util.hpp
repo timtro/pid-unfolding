@@ -7,8 +7,7 @@
 #include <optional>
 #include <utility>
 
-#include <sodium/sodium.h>
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 namespace chrono = std::chrono;
 

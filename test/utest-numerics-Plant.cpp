@@ -1,7 +1,8 @@
 #include <sodium/sodium.h>
+
 #include <boost/hana/functional/curry.hpp>
 #include <boost/numeric/odeint.hpp>
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "../include/Plant.hpp"
 #include "../include/util/util-sim.hpp"

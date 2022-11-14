@@ -1,7 +1,6 @@
+#include <catch2/catch.hpp>
 #include <type_traits>
 #include <utility>
-
-#include <catch/catch.hpp>
 
 #include "../include/util/util.hpp"
 
@@ -24,7 +23,7 @@ TEST_CASE(
 TEST_CASE(
     "Anamorphic unfold should count down from seed to zero (inclusive) given "
     "this coalgebra") {
-  const auto coalg = [](int z) constexpr -> std::optional<std::pair<int, int>> {
+  const auto coalg = [](int z) constexpr->std::optional<std::pair<int, int>> {
     if (z < 0)
       return {};
     else
